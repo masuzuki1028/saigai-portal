@@ -1,6 +1,6 @@
 # 04. データモデル（たたき台）
 
-> ステータス: Draft v0.1 / 2026-10-06
+> ステータス: Draft v0.2 / 2026-10-13（userId への変更、現地からの報告・状況確認の依頼・拠点の種別を追加）
 > DB: DynamoDB（オンデマンド）。RDS/PostGIS は固定費がかかるため初期は使わない。
 
 ---
@@ -35,7 +35,11 @@
 | NotificationChannel | 通知先（メール / Web Push / Slack / Teams / LINE） | `app` |
 | Event | 正規化した公式情報（警報・地震・津波） | `events` |
 | SocialPost | SNS投稿のメタ情報（本文は保持しない） | `events` |
-| TimelineItem | 地点ごとのタイムライン項目 | `timeline` |
+| TimelineItem | 地点ごとのタイムライン項目（公式・SNS・報告） | `timeline` |
+| Report | 現地からの報告（家族・社員の「無事」「被害あり」など）。TimelineItem の `kind=report` として保存 | `timeline` |
+| CheckSet | 状況確認の依頼（1つの事象に対する、組織の拠点への依頼のまとまり） | `timeline` |
+| CheckRequest | 拠点ごとの状況確認の依頼と回答 | `timeline` |
+| CheckToken | 状況確認の回答用ワンタイムリンクのトークン | `app` |
 | NotificationLog | 通知の送信記録 | `timeline` |
 | AuditLog | 操作の監査ログ（主に法人） | `audit` |
 | IngestCursor | 取り込み処理の進捗（最終取得位置） | `app` |
@@ -59,6 +63,9 @@ erDiagram
   USER ||--o{ NOTIFICATION_CHANNEL : owns
   ORGANIZATION ||--o{ NOTIFICATION_CHANNEL : owns
   TIMELINE_ITEM ||--o{ NOTIFICATION_LOG : triggers
+  ORGANIZATION ||--o{ CHECK_SET : sends
+  CHECK_SET ||--|{ CHECK_REQUEST : contains
+  LOCATION ||--o{ CHECK_REQUEST : "asked about"
   ORGANIZATION ||--o{ AUDIT_LOG : records
 ```
 
@@ -71,7 +78,12 @@ erDiagram
 | `hazard` | `rain`（大雨）, `flood`（洪水）, `landslide`（土砂災害）, `earthquake`（地震）, `tsunami`（津波） |
 | `severity` | `1`=情報, `2`=注意報, `3`=警報, `4`=特別警報 |
 | `source` | `jma_xml`, `p2p_quake`, `threads`, `bluesky` |
-| `reliability` | `official`（公式）, `corroborated`（複数投稿で裏付け）, `unverified`（未確認） |
+| `reliability` | `official`（公式）, `corroborated`（複数投稿で裏付け）, `unverified`（未確認）, `reported`（家族・社員・拠点の責任者からの報告） |
+| `timeline.kind` | `official`, `sns`, `report` |
+| `location.category` | `own`（自社）, `partner`（取引先）。個人の地点は `own` のみ |
+| `report.status` | `safe`（無事）, `damaged`（被害あり）, `other`（その他） |
+| `check.answer` | `no_damage`（被害なし）, `damaged`（被害あり）, `unknown`（分からない）。未回答は属性なし |
+| `check.damage` | `power`（停電）, `building`（建物）, `people`（人）, `other`（その他）。複数選択 |
 | `org.type` | `company`, `family` |
 | `role` | `owner`, `admin`, `editor`, `viewer` |
 | `plan` | `free`, `personal_plus`, `business` |
@@ -116,6 +128,7 @@ erDiagram
 | Channel | `OWNER#<U\|O>#<id>` | `CH#<chId>` | type, target_enc, verified, tags |
 | Invite | `INVITE#<tokenHash>` | `META` | orgId, role, expiresAt（TTL） |
 | IngestCursor | `INGEST#<source>` | `CURSOR` | lastFetchedAt, lastEntryId, etag |
+| CheckToken | `CHECKTOKEN#<tokenHash>` | `META` | orgId, checkSetId, locId, expiresAt（TTL 72時間） |
 
 - **GSI1**（`GSI1PK`, `GSI1SK`）: ユーザーが所属する組織一覧の取得
 - **データのキーには Cognito の `sub` を使わず、アプリ独自の `userId`（ULID）を使う**。Cognito のユーザープールは別リージョンに複製できないため、DR で大阪の予備ユーザープールに切り替えたときも同じデータに紐付けられるようにする（→ [10](./10_disaster_recovery.md) 4.4）
@@ -131,6 +144,7 @@ erDiagram
   "PK": "OWNER#U#01J9Y...",          // 個人所有: U#<userId> / 組織所有: O#<orgId>
   "SK": "LOC#01J9Z...",               // ULID
   "name": "自宅",
+  "category": "own",                  // own（自社）/ partner（取引先）。法人向け
   "tags": ["関東", "店舗"],            // 法人向け
   "radiusM": 3000,
   "geohash6": "xn76ur",               // 平文。約1.2km×0.6kmの粗い位置（突き合わせ・地図の初期表示用）
@@ -151,6 +165,8 @@ erDiagram
   },
   "snsOnlyWhenWarning": true,
   "channelIds": ["CH#..."],
+  "checkContactEnc": "base64...",     // 状況確認の依頼先（名前・メールアドレス。KMSで暗号化）。法人向け
+  "checkPolicy": { "earthquakeMinIntensity": "5-", "severity": 3 }, // 状況確認を依頼する条件。null なら依頼しない
   "quietHours": null,                 // 例: {"from":"23:00","to":"06:00","except":4}
   "version": 3,                       // 楽観ロック
   "createdAt": "...", "updatedAt": "..."
@@ -175,8 +191,15 @@ erDiagram
 | --- | --- | --- | --- |
 | TimelineItem | `LOC#<locId>` | `T#<issuedAt>#<itemId>` | kind(official/sns), eventRef, hazard, severity, reliability, summary, sourceUrl, notified, ackStatus(法人), ackBy, ttl |
 | NotificationLog | `LOC#<locId>` | `N#<sentAt>#<id>` | channelId, result, errorCode, ttl |
+| TimelineItem（報告） | `LOC#<locId>` | `T#<reportedAt>#<itemId>` | kind=report, reporterUserId, status, comment（140字まで）, ttl |
+| CheckSet | `ORG#<orgId>` | `CHKSET#<createdAt>#<checkSetId>` | eventRef, hazard, severity, total, answered, damaged, ttl |
+| CheckRequest | `CHKSET#<checkSetId>` | `LOC#<locId>` | locName, category, answer, damage[], comment（140字まで）, sentAt, answeredAt, reminderCount, ttl |
 
 - タイムライン取得: `PK = LOC#<locId>` を SK 降順で Query（ページング）
+- 状況確認: `matcher` が拠点の `checkPolicy` を満たすと判定したら、事象ごとに CheckSet を1つ作り（`eventRef` で冪等化）、拠点ごとに CheckRequest と CheckToken を作って `notify-queue` に依頼メールを投入する
+  - 回答の集計（`answered`, `damaged`）は CheckSet の属性をアトミックに加算する。ダッシュボードは CheckSet を1件読むだけで回答状況を出せる
+  - 回答用のトークンは推測できない乱数（128ビット以上）にし、DB にはハッシュだけを保存する。トークンで操作できるのは、その拠点のその依頼への回答だけにする
+- 報告: 書き込めるのは、その地点を見る権限があるメンバー（家族グループのメンバー、組織の editor 以上）。報告をきっかけにした通知はしない（タイムラインに表示するだけ）
 - 法人の履歴検索（期間×拠点）: 拠点ごとに SK の範囲指定 Query。全拠点横断の集計は件数が増えたら S3 エクスポート + Athena を検討
 - TTL（プラン別）: 無料 7日 / 個人有料 90日 / 法人 1年（組織設定で短縮可）
 
@@ -207,6 +230,10 @@ erDiagram
 | 9 | 地点のタイムライン | `timeline` Query PK=`LOC#<locId>` 降順 |
 | 10 | 履歴検索（期間指定） | `timeline` Query PK=`LOC#<locId>`, SK between |
 | 11 | 監査ログ閲覧 | `audit` Query PK=`ORG#<orgId>` 降順 |
+| 12 | 組織の状況確認の一覧 | `timeline` Query PK=`ORG#<orgId>`, SK begins_with `CHKSET#` 降順 |
+| 13 | 状況確認の拠点ごとの回答 | `timeline` Query PK=`CHKSET#<checkSetId>` |
+| 14 | 回答用リンクを開く | `app` GetItem PK=`CHECKTOKEN#<tokenHash>` → `timeline` GetItem PK=`CHKSET#<checkSetId>`, SK=`LOC#<locId>` |
+| 15 | 自社/取引先での絞り込み | 拠点一覧（#2）を取得してから `category` で絞り込む（拠点数が数百までなら十分） |
 
 ---
 
@@ -245,6 +272,8 @@ sequenceDiagram
 | 正確な緯度経度 | **要配慮扱い（独自基準）** | アプリ層暗号化（KMS） | 同上 |
 | Geohash6（粗い位置） | 低 | 平文 | 同上 |
 | Slack/Teams Webhook URL | 秘密情報 | アプリ層暗号化（KMS） | チャネル削除まで |
+| 状況確認の依頼先（名前・メールアドレス） | 個人情報（組織のメンバーでない人を含む） | アプリ層暗号化（KMS） | 拠点の削除・依頼先の変更まで |
+| 報告・状況確認の回答のコメント | 個人情報を含み得る | DynamoDB（保存時暗号化）。140字までに制限し、ログには出さない | タイムラインと同じ TTL |
 | IPアドレス | 個人情報になり得る | ハッシュ化して監査ログへ | 1年 |
 | SNS投稿 | 第三者の情報 | 本文は保存しない（URL・メタのみ） | 7日 |
 
