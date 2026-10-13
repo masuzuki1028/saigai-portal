@@ -1,0 +1,44 @@
+# OS / エディタ
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# 秘密情報・環境ごとの値（AWS アカウント ID・ARN などはコミットしない）
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+!*.tfvars.example
+*.tfplan
+tfplan
+crash.log
+.terraform.tfstate.lock.info
+
+# web（Next.js）
+node_modules/
+web/.next/
+web/out/
+web/coverage/
+web/playwright-report/
+web/test-results/
+web/blob-report/
+*.tsbuildinfo
+npm-debug.log*
+
+# api（Go）
+api/bin/
+bootstrap
+*.zip
+coverage.out
+*.test
+
+# Claude Code のローカル設定
+.claude/settings.local.json
