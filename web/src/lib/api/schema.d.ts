@@ -251,10 +251,10 @@ export interface components {
             title: string;
             summary: string;
             /**
-             * @description 発表 / 継続（レベルの変化あり） / 解除
+             * @description 発表 / 継続（レベルの変化あり） / 解除 / 訂正 / 取消（気象庁が情報を取り消した）
              * @enum {string}
              */
-            status: "issued" | "continued" | "cleared";
+            status: "issued" | "continued" | "cleared" | "corrected" | "cancelled";
             /** @description 出典の表示名（例 "気象庁"） */
             source: string;
             sourceUrl?: string;

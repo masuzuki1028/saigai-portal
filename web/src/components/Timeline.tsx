@@ -20,7 +20,7 @@ const reliabilityLabel: Record<TimelineItem["reliability"], string> = {
   reported: "報告",
 };
 
-const statusLabel: Record<TimelineItem["status"], string> = { issued: "発表", continued: "切り替え", cleared: "解除" };
+const statusLabel: Record<TimelineItem["status"], string> = { issued: "発表", continued: "切り替え", cleared: "解除", corrected: "訂正", cancelled: "取消" };
 
 /** 地点のタイムライン（新しい順）。公式情報と SNS 投稿は色とラベルで区別する（デマ対策） */
 export function Timeline({ items }: { items: TimelineItem[] }) {
@@ -41,15 +41,21 @@ export function Timeline({ items }: { items: TimelineItem[] }) {
       ) : (
         <ol className="timeline">
           {shown.map((it) => (
-            <li key={it.id} className={`timeline-item kind-${it.kind}`}>
+            <li key={it.id} className={`timeline-item kind-${it.kind} status-${it.status}`}>
               <div className="timeline-meta">
                 <time dateTime={it.issuedAt}>{formatDateTime(it.issuedAt)}</time>
                 <span className={`reliability rel-${it.reliability}`}>【{reliabilityLabel[it.reliability]}】</span>
-                <LevelBadge severity={it.status === "cleared" ? 0 : it.severity} hazard={it.hazard} />
+                <LevelBadge severity={it.status === "cleared" || it.status === "cancelled" ? 0 : it.severity} hazard={it.hazard} />
                 <span className="status">{statusLabel[it.status]}</span>
               </div>
               <h3 className="timeline-title">{it.title}</h3>
-              <p>{it.summary}</p>
+              {it.status === "cancelled" && (
+                <p className="cancelled-note" role="note">
+                  この情報は気象庁により取り消されました。
+                </p>
+              )}
+              {it.status === "corrected" && <p className="corrected-note">気象庁が内容を訂正しました。</p>}
+              <p className="timeline-summary">{it.summary}</p>
               <p className="source">
                 出典: {it.source}
                 {it.sourceUrl && (

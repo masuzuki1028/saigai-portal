@@ -301,3 +301,76 @@ func (s *Store) DeleteTimeline(ctx context.Context, locID string) error {
 	}
 	return nil
 }
+
+// Affected は、地震・津波の ID（同じ地震の続報・取消報で共通）ごとに、タイムラインに項目を出した地点の記録。
+// 取消報が届いたときに、どの地点のどの項目を取り消すかを引くために使う。
+type Affected struct {
+	Group        string    `dynamodbav:"group"` // 例: quake:20260801031200
+	LocationID   string    `dynamodbav:"locId"`
+	OwnerKey     string    `dynamodbav:"ownerKey"`
+	LocationName string    `dynamodbav:"locName"`
+	ItemID       string    `dynamodbav:"itemId"`
+	IssuedAt     time.Time `dynamodbav:"issuedAt"`
+	Title        string    `dynamodbav:"title"`
+	Notified     bool      `dynamodbav:"notified"`
+	WrittenBy    string    `dynamodbav:"writtenBy"`
+}
+
+func affectedPK(group string) string { return "AFFECT#" + group }
+
+// PutAffected は項目を出した地点を記録する（events テーブル。電文と同じ保持期間）。
+func (s *Store) PutAffected(ctx context.Context, a Affected) error {
+	a.WrittenBy = s.WrittenBy
+	a.IssuedAt = a.IssuedAt.UTC()
+	item, err := attributevalue.MarshalMap(a)
+	if err != nil {
+		return err
+	}
+	item["PK"] = &types.AttributeValueMemberS{Value: affectedPK(a.Group)}
+	item["SK"] = &types.AttributeValueMemberS{Value: a.LocationID + "#" + a.ItemID}
+	item["ttl"] = &types.AttributeValueMemberN{Value: strconv.FormatInt(ttlAfter(s.Now(), EventTTL), 10)}
+	_, err = s.DB.PutItem(ctx, &dynamodb.PutItemInput{TableName: &s.Tables.Events, Item: item})
+	return err
+}
+
+// ListAffected は地震・津波の ID に対して項目を出した地点を返す。
+func (s *Store) ListAffected(ctx context.Context, group string) ([]Affected, error) {
+	p := dynamodb.NewQueryPaginator(s.DB, &dynamodb.QueryInput{
+		TableName:                 &s.Tables.Events,
+		KeyConditionExpression:    aws.String("PK = :pk"),
+		ExpressionAttributeValues: map[string]types.AttributeValue{":pk": &types.AttributeValueMemberS{Value: affectedPK(group)}},
+	})
+	var out []Affected
+	for p.HasMorePages() {
+		page, err := p.NextPage(ctx)
+		if err != nil {
+			return nil, err
+		}
+		var as []Affected
+		if err := attributevalue.UnmarshalListOfMaps(page.Items, &as); err != nil {
+			return nil, err
+		}
+		out = append(out, as...)
+	}
+	return out, nil
+}
+
+// CancelTimelineItem はタイムライン項目を「取消」にする。項目は消さずに残し、取り消されたことを表示する。
+// 項目が TTL で消えていれば何もしない。
+func (s *Store) CancelTimelineItem(ctx context.Context, locID, itemID string, issuedAt time.Time) error {
+	_, err := s.DB.UpdateItem(ctx, &dynamodb.UpdateItemInput{
+		TableName:                &s.Tables.Timeline,
+		Key:                      key(timelinePK(locID), "T#"+issuedAt.UTC().Format(time.RFC3339)+"#"+itemID),
+		UpdateExpression:         aws.String("SET #st = :c, writtenBy = :w"),
+		ConditionExpression:      aws.String("attribute_exists(PK)"),
+		ExpressionAttributeNames: map[string]string{"#st": "status"},
+		ExpressionAttributeValues: map[string]types.AttributeValue{
+			":c": &types.AttributeValueMemberS{Value: string(domain.StatusCancelled)},
+			":w": &types.AttributeValueMemberS{Value: s.WrittenBy},
+		},
+	})
+	if isConditionFailed(err) {
+		return nil
+	}
+	return err
+}

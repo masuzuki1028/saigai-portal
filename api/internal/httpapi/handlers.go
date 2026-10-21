@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -220,6 +221,7 @@ func (s *Server) GetTimeline(ctx context.Context, req apigen.GetTimelineRequestO
 	if err != nil {
 		return nil, err
 	}
+	sortTimeline(items)
 	out := apigen.GetTimeline200JSONResponse{Items: make([]apigen.TimelineItem, 0, len(items))}
 	for _, it := range items {
 		notified := it.Notified
@@ -408,4 +410,25 @@ func toAPISettings(h domain.HazardSettings) apigen.HazardSettings {
 			NotifyMinIntensity:  apigen.Intensity(h.Earthquake.NotifyMinIntensity),
 		},
 	}
+}
+
+// sortTimeline は同じ時刻の項目を、レベルの高い順・種別の順に並べる（DynamoDB の並びは項目の ID 順で意味がないため）。
+func sortTimeline(items []store.TimelineItem) {
+	order := map[domain.Hazard]int{}
+	for i, hz := range domain.Hazards {
+		order[hz] = i
+	}
+	sort.SliceStable(items, func(i, j int) bool {
+		a, b := items[i], items[j]
+		if !a.IssuedAt.Equal(b.IssuedAt) {
+			return a.IssuedAt.After(b.IssuedAt)
+		}
+		if a.Severity != b.Severity {
+			return a.Severity > b.Severity
+		}
+		if order[a.Hazard] != order[b.Hazard] {
+			return order[a.Hazard] < order[b.Hazard]
+		}
+		return a.Title < b.Title
+	})
 }

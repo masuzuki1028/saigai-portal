@@ -82,3 +82,31 @@ test("退会すると、トップに戻りログアウトする", async ({ page 
   await page.goto("/app");
   await expect(page).toHaveURL(/\/login/);
 });
+
+test("住所で探して地点を登録できる（地図を操作しなくてよい）", async ({ page }) => {
+  await login(page, "empty");
+  await page.getByRole("link", { name: "＋ 地点を追加" }).click();
+  await page.getByRole("textbox", { name: "名前" }).fill("実家");
+  await page.getByRole("textbox", { name: "住所で探す" }).fill("長岡市");
+  await page.getByRole("button", { name: "検索", exact: true }).click();
+  await page.getByRole("button", { name: "新潟県長岡市城内町" }).click();
+  await expect(page.getByText("選択中: 緯度 37.445873 / 経度 138.851746")).toBeVisible();
+  await expectNoSeriousA11yViolations(page);
+  await page.getByRole("button", { name: "登録" }).click();
+  await expect(page.getByRole("heading", { name: "実家（半径3km）" })).toBeVisible();
+});
+
+test("利用規約・プライバシーポリシー・security.txt を表示できる", async ({ page }) => {
+  await page.goto("/");
+  await page.getByRole("link", { name: "プライバシーポリシー" }).click();
+  await expect(page.getByRole("heading", { name: "プライバシーポリシー", level: 1 })).toBeVisible();
+  await expect(page.getByRole("cell", { name: "国土地理院 住所検索" })).toBeVisible();
+  await expectNoSeriousA11yViolations(page);
+  await page.getByRole("link", { name: "利用規約" }).click();
+  await expect(page.getByRole("heading", { name: "利用規約", level: 1 })).toBeVisible();
+  await expectNoSeriousA11yViolations(page);
+
+  const res = await page.request.get("/.well-known/security.txt");
+  expect(res.ok()).toBe(true);
+  expect(await res.text()).toContain("Contact: https://github.com/masuzuki1028/saigai-portal/security/advisories/new");
+});

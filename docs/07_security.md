@@ -106,7 +106,7 @@
 
 | 脅威 | 対策 |
 | --- | --- |
-| XSS | React のエスケープに任せ、`dangerouslySetInnerHTML` 禁止（lint で検出）。**厳格な CSP**（`script-src 'self'`、外部は地図タイル・Cognito など必要なものだけ許可） |
+| XSS | React のエスケープに任せ、`dangerouslySetInnerHTML` 禁止（lint で検出）。**厳格な CSP**（`script-src 'self'`、外部は地図タイル・Cognito など必要なものだけ許可）。`connect-src` には国土地理院の住所検索（`https://msearch.gsi.go.jp`）を許可する（住所検索は利用者のブラウザから直接呼び、入力した住所をこちらのサーバーに通さない） |
 | トークン窃取 | トークンはメモリ保持を基本にし、`localStorage` に長期トークンを置かない。将来 SSR を導入する場合は BFF + HttpOnly Cookie 方式へ移行を検討 |
 | クリックジャッキング | `frame-ancestors 'none'` / `X-Frame-Options: DENY` |
 | その他ヘッダ | `X-Content-Type-Options: nosniff`、`Referrer-Policy: strict-origin-when-cross-origin`、`Permissions-Policy`（位置情報は自サイトのみ） |

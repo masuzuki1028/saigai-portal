@@ -1,6 +1,7 @@
 import { http, HttpResponse } from "msw";
 
 import type { ApiError, LocationInput, LocationUpdate } from "@/lib/api/client";
+import { ADDRESS_SEARCH_URL } from "@/lib/geo/addressSearch";
 
 import { db, newId } from "./db";
 import { defaultSettings } from "./fixtures";
@@ -14,8 +15,23 @@ function authed(request: Request) {
 
 const LIMIT = 3;
 
+/** 国土地理院の住所検索のモック（テストから外部サービスを呼ばない） */
+const addresses = [
+  { title: "新潟県長岡市城内町", lon: 138.851746, lat: 37.445873 },
+  { title: "新潟県新潟市中央区西堀通", lon: 139.0364, lat: 37.9161 },
+  { title: "東京都千代田区丸の内", lon: 139.7671, lat: 35.6812 },
+];
+
 /** 本物の API（api/openapi.yaml）と同じ形で応答するモック */
 export const handlers = [
+  http.get(ADDRESS_SEARCH_URL, ({ request }) => {
+    const q = new URL(request.url).searchParams.get("q") ?? "";
+    const hits = addresses.filter((a) => q && a.title.includes(q.replace(/\s/g, "")));
+    return HttpResponse.json(
+      hits.map((a) => ({ type: "Feature", geometry: { type: "Point", coordinates: [a.lon, a.lat] }, properties: { addressCode: "", title: a.title } })),
+    );
+  }),
+
   http.get(api("/health"), () => HttpResponse.json({ status: "ok" })),
 
   http.get(api("/me"), ({ request }) => {

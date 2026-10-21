@@ -18,6 +18,9 @@ export default function Top() {
         はじめる
       </Link>
       <Disclaimer />
+      <p className="muted">
+        <Link href="/terms">利用規約</Link> · <Link href="/privacy">プライバシーポリシー</Link> · <Link href="/disclaimer">免責・出典</Link>
+      </p>
     </main>
   );
 }

@@ -5,10 +5,13 @@ package scenario_test
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"flag"
+	"fmt"
 	"io"
 	"log/slog"
 	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"strings"
@@ -85,6 +88,7 @@ func TestScenarios(t *testing.T) {
 				t.Fatal(err)
 			}
 			got += "\n# メール\n" + strings.Join(mb.logs, "\n") + "\n"
+			got += finalState(t, h, sc)
 
 			// 同じ電文をもう一度流しても、何も起きない（冪等）
 			again, err := scenario.Run(ctx, p, files)
@@ -108,4 +112,58 @@ func TestScenarios(t *testing.T) {
 			}
 		})
 	}
+}
+
+// finalState は、シナリオの最後の時点の各地点の「現在のレベル」とタイムライン（状態つき）を API から読んで文章にする。
+func finalState(t *testing.T, h http.Handler, sc scenario.Scenario) string {
+	t.Helper()
+	get := func(user, path string, v any) {
+		req := httptest.NewRequest(http.MethodGet, path, nil)
+		req.Header.Set("Authorization", "Bearer "+user)
+		rec := httptest.NewRecorder()
+		h.ServeHTTP(rec, req)
+		if rec.Code != http.StatusOK {
+			t.Fatalf("GET %s: %d", path, rec.Code)
+		}
+		if err := json.Unmarshal(rec.Body.Bytes(), v); err != nil {
+			t.Fatal(err)
+		}
+	}
+	var out strings.Builder
+	out.WriteString("\n# 最後の状態\n")
+	seen := map[string]bool{}
+	for _, l := range sc.Locations {
+		if seen[l.User] {
+			continue
+		}
+		seen[l.User] = true
+		var locs struct {
+			Items []struct {
+				ID            string `json:"id"`
+				Name          string `json:"name"`
+				CurrentLevels []struct {
+					Title string `json:"title"`
+				} `json:"currentLevels"`
+			} `json:"items"`
+		}
+		get(l.User, "/api/locations", &locs)
+		for _, loc := range locs.Items {
+			levels := []string{}
+			for _, c := range loc.CurrentLevels {
+				levels = append(levels, c.Title)
+			}
+			fmt.Fprintf(&out, "## %s（発表中: %s）\n", loc.Name, strings.Join(levels, "、"))
+			var tl struct {
+				Items []struct {
+					Title  string `json:"title"`
+					Status string `json:"status"`
+				} `json:"items"`
+			}
+			get(l.User, "/api/locations/"+loc.ID+"/timeline?limit=100", &tl)
+			for _, it := range tl.Items {
+				fmt.Fprintf(&out, "- %s [%s]\n", it.Title, it.Status)
+			}
+		}
+	}
+	return out.String()
 }

@@ -502,8 +502,8 @@ components:
           type: string
         status:
           type: string
-          enum: [issued, continued, cleared]
-          description: 発表 / 継続（レベルの変化あり） / 解除
+          enum: [issued, continued, cleared, corrected, cancelled]
+          description: 発表 / 継続（レベルの変化あり） / 解除 / 訂正 / 取消（気象庁が情報を取り消した）
         source:
           type: string
           description: 出典の表示名（例 "気象庁"）

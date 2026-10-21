@@ -1,0 +1,5 @@
+# saigai-timeline の脆弱性の報告窓口（RFC 9116）
+Contact: https://github.com/masuzuki1028/saigai-portal/security/advisories/new
+Policy: https://github.com/masuzuki1028/saigai-portal/blob/main/SECURITY.md
+Preferred-Languages: ja, en
+Expires: 2027-10-21T00:00:00.000Z

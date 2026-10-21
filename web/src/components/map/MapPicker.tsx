@@ -17,6 +17,7 @@ export function MapPicker({ value, onChange }: Props) {
   const onChangeRef = useRef(onChange);
   onChangeRef.current = onChange;
   const markerRef = useRef<import("maplibre-gl").Marker | null>(null);
+  const mapRef = useRef<import("maplibre-gl").Map | null>(null);
   const initial = useRef(value);
 
   useEffect(() => {
@@ -27,6 +28,7 @@ export function MapPicker({ value, onChange }: Props) {
       if (cancelled || !ref.current) return;
       const c = initial.current ?? JAPAN_CENTER;
       map = new Map({ container: ref.current, style: gsiStyle, center: [c.lon, c.lat], zoom: initial.current ? 13 : 4.5, attributionControl: { compact: false } });
+      mapRef.current = map;
       map.addControl(new NavigationControl({ showCompass: false }));
       markerRef.current = new Marker({ color: "#1d4ed8" });
       if (initial.current) markerRef.current.setLngLat([c.lon, c.lat]).addTo(map);
@@ -37,9 +39,21 @@ export function MapPicker({ value, onChange }: Props) {
     });
     return () => {
       cancelled = true;
+      mapRef.current = null;
       map?.remove();
     };
   }, []);
+
+  // 住所検索などで外から地点が変わったら、ピンと地図の表示を合わせる
+  useEffect(() => {
+    const map = mapRef.current;
+    const marker = markerRef.current;
+    if (!map || !marker || !value) return;
+    const cur = marker.getLngLat?.();
+    if (cur && Math.abs(cur.lat - value.lat) < 1e-6 && Math.abs(cur.lng - value.lon) < 1e-6) return;
+    marker.setLngLat([value.lon, value.lat]).addTo(map);
+    map.flyTo({ center: [value.lon, value.lat], zoom: Math.max(map.getZoom(), 14) });
+  }, [value]);
 
   return <div ref={ref} className="map map-picker" role="application" aria-label="地図をタップして地点を選ぶ" />;
 }

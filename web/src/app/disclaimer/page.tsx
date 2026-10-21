@@ -21,7 +21,10 @@ export default function Page() {
           <a href="https://maps.gsi.go.jp/development/ichiran.html" target="_blank" rel="noopener noreferrer">
             地理院タイル
           </a>
-          、市区町村の判定: 国土地理院 逆ジオコーダ
+          、市区町村の判定: 国土地理院 逆ジオコーダ、住所検索: 国土地理院 住所検索
+        </li>
+        <li>
+          津波予報区の判定: 気象庁 防災情報XMLで用いるコードが示す地域の GIS データ（津波予報区）を加工して作成
         </li>
       </ul>
       <Link href="/">トップへ</Link>

@@ -493,3 +493,54 @@ legend {
 .features {
   padding-left: 1.2em;
 }
+
+/* 訂正・取消 */
+.status-cancelled .timeline-title,
+.status-cancelled .timeline-summary {
+  text-decoration: line-through;
+  color: var(--muted);
+}
+
+.cancelled-note,
+.corrected-note {
+  font-weight: 700;
+  font-size: 0.875rem;
+}
+
+.cancelled-note {
+  color: var(--danger);
+}
+
+/* 住所検索 */
+.inline {
+  display: flex;
+  gap: 8px;
+  align-items: flex-end;
+}
+
+.inline .grow {
+  flex: 1;
+}
+
+.candidates {
+  list-style: none;
+  padding: 0;
+  margin: 4px 0;
+  display: grid;
+  gap: 6px;
+}
+
+/* 規約などの文書 */
+.legal table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.legal th,
+.legal td {
+  border: 1px solid var(--border);
+  padding: 6px 8px;
+  text-align: left;
+  vertical-align: top;
+}

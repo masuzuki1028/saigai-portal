@@ -41,7 +41,8 @@ export function AppShell({ title, back, children }: { title: string; back?: stri
       <footer className="footer">
         <Disclaimer />
         <p>
-          出典: 気象庁 / 地図: 国土地理院 · <Link href="/disclaimer">免責・出典</Link>
+          出典: 気象庁 / 地図: 国土地理院 · <Link href="/disclaimer">免責・出典</Link> · <Link href="/terms">利用規約</Link> ·{" "}
+          <Link href="/privacy">プライバシーポリシー</Link>
         </p>
       </footer>
     </>

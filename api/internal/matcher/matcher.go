@@ -37,6 +37,9 @@ type Store interface {
 	GetState(ctx context.Context, locID, key string) (store.HazardState, error)
 	PutState(ctx context.Context, locID string, st store.HazardState) (bool, error)
 	PutTimelineItem(ctx context.Context, locID string, it store.TimelineItem) error
+	PutAffected(ctx context.Context, a store.Affected) error
+	ListAffected(ctx context.Context, group string) ([]store.Affected, error)
+	CancelTimelineItem(ctx context.Context, locID, itemID string, issuedAt time.Time) error
 }
 
 // Matcher は Event を地点に突き合わせる。Notify には地点ごとにまとめた通知の依頼を渡す
@@ -80,9 +83,14 @@ func (m *Matcher) Match(ctx context.Context, ev *domain.Event) (Result, error) {
 
 func (m *Matcher) match(ctx context.Context, ev *domain.Event) (Result, error) {
 	if ev.InfoType == "取消" {
-		// 取消報の扱い（取り消された情報の表示を消すか）は Phase 2 で決める。MVP では無視して記録だけ残す
-		m.Log.Warn("取消報を無視した", "eventId", ev.ID, "title", ev.Title)
-		return Result{}, nil
+		g := groupOf(ev)
+		if g == "" {
+			// 警報・注意報と土砂災害警戒情報は、毎回すべての区域の状態が入った電文が届くため、
+			// 取消報のあとの電文で正しい状態に戻る。取消報そのものは記録だけ残す
+			m.Log.Warn("取消報を記録した（次の電文で状態を戻す）", "eventId", ev.ID, "title", ev.Title)
+			return Result{}, nil
+		}
+		return m.cancel(ctx, ev, g)
 	}
 	switch ev.Kind {
 	case domain.EventWarning:
@@ -97,6 +105,67 @@ func (m *Matcher) match(ctx context.Context, ev *domain.Event) (Result, error) {
 	default:
 		return Result{}, fmt.Errorf("unknown event kind %q", ev.Kind)
 	}
+}
+
+// groupOf は、続報・取消報で共通の ID（地震・津波）。それ以外の電文は空。
+func groupOf(ev *domain.Event) string {
+	switch {
+	case ev.Kind == domain.EventEarthquake && ev.Quake != nil && ev.Quake.EventID != "":
+		return "quake:" + ev.Quake.EventID
+	case ev.Kind == domain.EventTsunami && ev.Tsunami != nil && ev.Tsunami.EventID != "":
+		return "tsunami:" + ev.Tsunami.EventID
+	}
+	return ""
+}
+
+// cancel は取消報を処理する。同じ地震・津波で出した項目を「取消」にし、現在のレベルから外す。
+// 通知済みの地点には、取り消されたことを通知する（誤った情報のままにしない）。
+func (m *Matcher) cancel(ctx context.Context, ev *domain.Event, group string) (Result, error) {
+	var res Result
+	affected, err := m.Store.ListAffected(ctx, group)
+	if err != nil {
+		return res, err
+	}
+	hz, stKey := domain.Tsunami, string(domain.Tsunami)
+	if ev.Kind == domain.EventEarthquake {
+		hz, stKey = domain.Earthquake, "Q#"+ev.Quake.EventID
+	}
+	notified := map[string]store.Affected{}
+	reset := map[string]bool{}
+	for _, a := range affected {
+		if err := m.Store.CancelTimelineItem(ctx, a.LocationID, a.ItemID, a.IssuedAt); err != nil {
+			return res, err
+		}
+		res.Items = append(res.Items, a.LocationName+": 取消: "+a.Title)
+		if a.Notified {
+			notified[a.LocationID] = a
+		}
+		if !reset[a.LocationID] {
+			reset[a.LocationID] = true
+			st := store.HazardState{Key: stKey, Hazard: hz, Severity: 0, Title: "取消", ReportTime: ev.IssuedAt}
+			if _, err := m.Store.PutState(ctx, a.LocationID, st); err != nil {
+				return res, err
+			}
+		}
+	}
+	for _, a := range sortedAffected(notified) {
+		res.Jobs = append(res.Jobs, Job{
+			OwnerKey: a.OwnerKey, LocationID: a.LocationID, LocationName: a.LocationName, Hazard: hz,
+			Title: a.Title, Summary: "気象庁が「" + a.Title + "」の情報を取り消しました。" + ev.Headline,
+			Status: domain.StatusCancelled, IssuedAt: ev.IssuedAt,
+		})
+	}
+	m.Log.Info("cancelled", "eventId", ev.ID, "group", group, "items", len(affected), "notify", len(res.Jobs))
+	return res, nil
+}
+
+func sortedAffected(m map[string]store.Affected) []store.Affected {
+	out := make([]store.Affected, 0, len(m))
+	for _, a := range m {
+		out = append(out, a)
+	}
+	sort.Slice(out, func(i, j int) bool { return out[i].LocationID < out[j].LocationID })
+	return out
 }
 
 // areaLevel は1つの突き合わせキー（市町村）の種別ごとの状態。
@@ -250,7 +319,7 @@ func (m *Matcher) applyLevel(ctx context.Context, ev *domain.Event, e store.Area
 		Reliability: "official", Title: title, Summary: summary, Status: d.Status, Source: sourceJMA,
 		SourceURL: lc.sourceURL, IssuedAt: ev.IssuedAt, Notified: d.Notify,
 	}
-	return m.emit(ctx, e, item, d, res)
+	return m.emit(ctx, ev, e, item, d, res)
 }
 
 func (m *Matcher) matchQuake(ctx context.Context, ev *domain.Event) (Result, error) {
@@ -273,6 +342,7 @@ func (m *Matcher) matchQuake(ctx context.Context, ev *domain.Event) (Result, err
 // applyQuake は地点の市町村の震度を判定する。同じ地震の続報（震度の追加・修正）では、
 // 震度が大きくなったときだけ項目を追加する。通知は、初めて通知のしきい値に達したときと、
 // レベル（severity）が上がったとき（例: 震度5強 → 6弱）に送る。
+// 訂正報では震度が下がる場合も反映し、「訂正」の項目を出す。通知済みの地点には訂正も通知する。
 func (m *Matcher) applyQuake(ctx context.Context, ev *domain.Event, e store.AreaEntry, c domain.CityIntensity, res *Result) error {
 	set := e.HazardSettings.Earthquake
 	stKey := "Q#" + ev.Quake.EventID
@@ -280,11 +350,18 @@ func (m *Matcher) applyQuake(ctx context.Context, ev *domain.Event, e store.Area
 	if err != nil {
 		return err
 	}
-	if old.Intensity.Rank() >= c.MaxInt.Rank() {
+	correction := ev.InfoType == "訂正" && old.Intensity != "" && old.Intensity != c.MaxInt
+	if old.Intensity.Rank() >= c.MaxInt.Rank() && !correction {
 		return nil
 	}
 	display := c.MaxInt.AtLeast(set.DisplayMinIntensity)
 	notify := c.MaxInt.AtLeast(set.NotifyMinIntensity) && (!old.Notified || c.MaxInt.Severity() > old.Severity)
+	status := domain.StatusIssued
+	if correction {
+		status = domain.StatusCorrected
+		display = display || old.Intensity.AtLeast(set.DisplayMinIntensity)
+		notify = notify || old.Notified
+	}
 	title := fmt.Sprintf("地震（%s %s）", c.Name, c.MaxInt.Label())
 	st := store.HazardState{
 		Key: stKey, Hazard: domain.Earthquake, Severity: c.MaxInt.Severity(), Title: title,
@@ -301,18 +378,25 @@ func (m *Matcher) applyQuake(ctx context.Context, ev *domain.Event, e store.Area
 		ev.Quake.OriginTime.In(jst).Format("1月2日 15時04分"), ev.Quake.Hypocenter, ev.Quake.Magnitude, c.Name, c.MaxInt.Label())
 	item := store.TimelineItem{
 		ID: itemID(ev.ID, e.LocationID, string(c.MaxInt)), Kind: "official", EventID: ev.ID, Hazard: domain.Earthquake,
-		Severity: c.MaxInt.Severity(), Reliability: "official", Title: title, Summary: summary, Status: domain.StatusIssued,
+		Severity: max(c.MaxInt.Severity(), domain.SeverityInfo), Reliability: "official", Title: title, Summary: summary, Status: status,
 		Source: sourceJMA, SourceURL: "https://www.jma.go.jp/bosai/map.html#contents=earthquake_map", IssuedAt: ev.IssuedAt, Notified: notify,
 	}
-	return m.emit(ctx, e, item, domain.Decision{AddItem: display, Status: domain.StatusIssued, Notify: notify}, res)
+	return m.emit(ctx, ev, e, item, domain.Decision{AddItem: display, Status: status, Notify: notify}, res)
 }
 
-func (m *Matcher) emit(ctx context.Context, e store.AreaEntry, item store.TimelineItem, d domain.Decision, res *Result) error {
+func (m *Matcher) emit(ctx context.Context, ev *domain.Event, e store.AreaEntry, item store.TimelineItem, d domain.Decision, res *Result) error {
 	if d.AddItem {
 		if err := m.Store.PutTimelineItem(ctx, e.LocationID, item); err != nil {
 			return err
 		}
-		res.Items = append(res.Items, e.Name+": "+item.Title)
+		res.Items = append(res.Items, e.Name+": "+item.Title+statusSuffix(item.Status))
+		// 取消報で取り消せるよう、地震・津波の項目を出した地点を記録する
+		if g := groupOf(ev); g != "" {
+			a := store.Affected{Group: g, LocationID: e.LocationID, OwnerKey: e.OwnerKey, LocationName: e.Name, ItemID: item.ID, IssuedAt: item.IssuedAt, Title: item.Title, Notified: d.Notify}
+			if err := m.Store.PutAffected(ctx, a); err != nil {
+				return err
+			}
+		}
 	}
 	if d.Notify {
 		j := Job{
@@ -326,6 +410,13 @@ func (m *Matcher) emit(ctx context.Context, e store.AreaEntry, item store.Timeli
 }
 
 var jst = time.FixedZone("JST", 9*60*60)
+
+func statusSuffix(s domain.ItemStatus) string {
+	if s == domain.StatusCorrected {
+		return "（訂正）"
+	}
+	return ""
+}
 
 // itemID は電文・地点・種別から決まる ID。再処理しても同じ ID になり、重複して書き込まない。
 func itemID(eventID, locID, part string) string {

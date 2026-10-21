@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 災害シナリオ用に作成した電文（実在の発表ではない）。構造は津波警報・注意報・予報a（VTSE41）に合わせている -->
+<Report xmlns="http://xml.kishou.go.jp/jmaxml1/" xmlns:jmx="http://xml.kishou.go.jp/jmaxml1/">
+<Control><Title>津波警報・注意報・予報a</Title><DateTime>2026-08-25T01:10:00Z</DateTime><Status>通常</Status><EditorialOffice>気象庁本庁</EditorialOffice><PublishingOffice>気象庁</PublishingOffice></Control>
+<Head xmlns="http://xml.kishou.go.jp/jmaxml1/informationBasis1/">
+<Title>津波注意報</Title><ReportDateTime>2026-08-25T10:10:00+09:00</ReportDateTime><TargetDateTime>2026-08-25T10:10:00+09:00</TargetDateTime>
+<EventID>20260825100000</EventID><InfoType>取消</InfoType><Serial></Serial><InfoKind>津波警報・注意報・予報</InfoKind><InfoKindVersion>1.0_1</InfoKindVersion>
+<Headline><Text>先ほどの津波注意報を取り消します。</Text></Headline>
+</Head>
+<Body xmlns="http://xml.kishou.go.jp/jmaxml1/body/seismology1/" xmlns:jmx_eb="http://xml.kishou.go.jp/jmaxml1/elementBasis1/">
+
+</Body>
+</Report>

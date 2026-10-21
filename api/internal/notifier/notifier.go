@@ -95,6 +95,10 @@ func (n *Notifier) SendTest(ctx context.Context, u store.User) error {
 
 func statusLabel(s domain.ItemStatus, title string) string {
 	switch s {
+	case domain.StatusCancelled:
+		return "【取消】" + title
+	case domain.StatusCorrected:
+		return title + "（訂正）"
 	case domain.StatusContinued:
 		return title + "（レベルが変わりました）"
 	default:

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 災害シナリオ用に作成した電文（実在の発表ではない）。構造は震源・震度に関する情報（VXSE53）に合わせている -->
+<Report xmlns="http://xml.kishou.go.jp/jmaxml1/" xmlns:jmx="http://xml.kishou.go.jp/jmaxml1/">
+<Control><Title>震源・震度に関する情報</Title><DateTime>2026-08-15T03:30:00Z</DateTime><Status>通常</Status><EditorialOffice>気象庁本庁</EditorialOffice><PublishingOffice>気象庁</PublishingOffice></Control>
+<Head xmlns="http://xml.kishou.go.jp/jmaxml1/informationBasis1/">
+<Title>震源・震度情報</Title><ReportDateTime>2026-08-15T12:30:00+09:00</ReportDateTime><TargetDateTime>2026-08-15T12:30:00+09:00</TargetDateTime>
+<EventID>20260815120200</EventID><InfoType>訂正</InfoType><Serial>2</Serial><InfoKind>地震情報</InfoKind><InfoKindVersion>1.0_1</InfoKindVersion>
+<Headline><Text>先ほどの震源・震度情報を訂正します。長岡市の震度を訂正しました。</Text></Headline>
+</Head>
+<Body xmlns="http://xml.kishou.go.jp/jmaxml1/body/seismology1/" xmlns:jmx_eb="http://xml.kishou.go.jp/jmaxml1/elementBasis1/">
+<Earthquake>
+<OriginTime>2026-08-15T12:02:00+09:00</OriginTime>
+<Hypocenter><Area><Name>新潟県中越地方</Name><Code type="震央地名">460</Code></Area></Hypocenter>
+<jmx_eb:Magnitude type="Mj" description="Ｍ５．８">5.8</jmx_eb:Magnitude>
+</Earthquake>
+<Intensity><Observation><MaxInt>5-</MaxInt>
+<Pref><Name>新潟県</Name><Code>15</Code><MaxInt>5-</MaxInt><Area><Name>新潟県</Name><Code>460</Code><MaxInt>5-</MaxInt>
+<City><Name>長岡市</Name><Code>1520200</Code><MaxInt>5-</MaxInt></City>
+</Area></Pref></Observation></Intensity>
+</Body>
+</Report>

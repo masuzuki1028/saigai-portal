@@ -5,6 +5,7 @@ import { useState, type FormEvent } from "react";
 import type { HazardSettings, Location, RadiusM } from "@/lib/api/client";
 import { radiusOptions } from "@/lib/labels";
 
+import { AddressSearch } from "./AddressSearch";
 import { HazardSettingsFields } from "./HazardSettingsFields";
 import { MapPicker } from "./map/MapPicker";
 
@@ -44,7 +45,7 @@ export function LocationForm({ initial, isCoastal, submitLabel, onSubmit }: Prop
     setError(null);
     if (!v.name.trim()) return setError("名前を入力してください");
     if (v.name.trim().length > 40) return setError("名前は40文字以内で入力してください");
-    if (!v.coord) return setError("地図で地点を選んでください");
+    if (!v.coord) return setError("住所で探すか、地図で地点を選んでください");
     setBusy(true);
     const msg = await onSubmit({ ...v, coord: v.coord });
     setBusy(false);
@@ -72,9 +73,10 @@ export function LocationForm({ initial, isCoastal, submitLabel, onSubmit }: Prop
 
       <fieldset>
         <legend>場所</legend>
+        <AddressSearch onSelect={(c) => setV((x) => ({ ...x, coord: { lat: c.lat, lon: c.lon } }))} />
         <MapPicker value={v.coord} onChange={(coord) => setV((x) => ({ ...x, coord }))} />
         <p className="muted" aria-live="polite">
-          {v.coord ? `選択中: 緯度 ${v.coord.lat} / 経度 ${v.coord.lon}` : "地図をタップして地点を選んでください"}
+          {v.coord ? `選択中: 緯度 ${v.coord.lat} / 経度 ${v.coord.lon}` : "住所で探すか、地図をタップして地点を選んでください"}
         </p>
         <button type="button" className="secondary" onClick={useCurrentPosition}>
           現在地を使う

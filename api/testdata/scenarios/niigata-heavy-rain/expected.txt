@@ -32,3 +32,21 @@
 alice@example.com | 【saigai-timeline】実家: 大雨警報、洪水警報、大雨警報（土砂災害）
 alice@example.com | 【saigai-timeline】実家: 大雨特別警報、大雨特別警報（土砂災害）
 alice@example.com | 【saigai-timeline】実家: 大雨注意報（レベルが変わりました）、洪水注意報（レベルが変わりました）、土砂災害の警報・注意報の解除
+
+# 最後の状態
+## 実家（発表中: ）
+- 大雨の警報・注意報の解除 [cleared]
+- 洪水の警報・注意報の解除 [cleared]
+- 土砂災害の警報・注意報の解除 [cleared]
+- 大雨注意報 [continued]
+- 洪水注意報 [continued]
+- 大雨特別警報 [issued]
+- 大雨特別警報（土砂災害） [issued]
+- 大雨警報 [issued]
+- 洪水警報 [issued]
+- 大雨警報（土砂災害） [issued]
+- 大雨注意報 [issued]
+- 洪水注意報 [issued]
+## 新潟の職場（発表中: ）
+- 大雨の警報・注意報の解除 [cleared]
+- 大雨注意報 [issued]

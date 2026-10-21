@@ -31,3 +31,22 @@ describe("Timeline", () => {
     expect(screen.getByText(/表示の対象になる情報はまだありません/)).toBeInTheDocument();
   });
 });
+
+describe("Timeline（訂正・取消）", () => {
+  it("取り消された情報と訂正された情報を、それと分かるように表示する", () => {
+    const base = items[0]!;
+    render(
+      <Timeline
+        items={[
+          { ...base, id: "c", title: "地震（長岡市 震度4）", hazard: "earthquake", status: "cancelled" },
+          { ...base, id: "d", title: "地震（長岡市 震度5弱）", hazard: "earthquake", status: "corrected" },
+        ]}
+      />,
+    );
+    const [cancelled, corrected] = screen.getAllByRole("listitem");
+    expect(within(cancelled!).getByText("取消")).toBeInTheDocument();
+    expect(within(cancelled!).getByRole("note")).toHaveTextContent("気象庁により取り消されました");
+    expect(within(corrected!).getByText("訂正")).toBeInTheDocument();
+    expect(within(corrected!).getByText(/内容を訂正しました/)).toBeInTheDocument();
+  });
+});

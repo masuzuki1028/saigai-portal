@@ -57,3 +57,26 @@ describe("LocationEditScreen（沿岸の地点）", () => {
     expect(screen.queryByRole("combobox", { name: "津波の通知" })).not.toBeInTheDocument();
   });
 });
+
+describe("LocationEditScreen（住所で探す）", () => {
+  it("住所で探した候補を選ぶと、その座標で登録する。検索した住所は保存しない", async () => {
+    renderLoggedIn(<LocationEditScreen id={null} />, "empty");
+    await userEvent.type(screen.getByRole("textbox", { name: "名前" }), "実家");
+    await userEvent.type(screen.getByRole("textbox", { name: "住所で探す" }), "長岡市{Enter}");
+    await userEvent.click(await screen.findByRole("button", { name: "新潟県長岡市城内町" }));
+    expect(screen.getByText(/選択中: 緯度 37.445873/)).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "登録" }));
+
+    await waitFor(() => expect(router.push).toHaveBeenCalled());
+    const saved = [...db.locations.values()][0]!;
+    expect(saved.coord).toEqual({ lat: 37.445873, lon: 138.851746 });
+    expect(saved.address).toBeUndefined();
+  });
+
+  it("見つからないときは案内を表示する", async () => {
+    renderLoggedIn(<LocationEditScreen id={null} />, "empty");
+    await userEvent.type(screen.getByRole("textbox", { name: "住所で探す" }), "存在しない町");
+    await userEvent.click(screen.getByRole("button", { name: "検索" }));
+    expect(await screen.findByText(/見つかりませんでした/)).toBeInTheDocument();
+  });
+});

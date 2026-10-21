@@ -12,3 +12,11 @@
 # メール
 bob@example.com | 【saigai-timeline】新潟の職場: 津波警報
 bob@example.com | 【saigai-timeline】新潟の職場: 津波注意報（レベルが変わりました）
+
+# 最後の状態
+## 実家（発表中: ）
+## 新潟の職場（発表中: ）
+- 津波警報・注意報の解除 [cleared]
+- 津波注意報 [continued]
+- 津波警報 [issued]
+- 津波注意報 [issued]

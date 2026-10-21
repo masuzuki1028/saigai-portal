@@ -7,6 +7,8 @@ const (
 	StatusIssued    ItemStatus = "issued"    // 発表・レベルが上がった
 	StatusContinued ItemStatus = "continued" // レベルが下がったが表示の対象のまま
 	StatusCleared   ItemStatus = "cleared"   // 解除・表示の対象を下回った
+	StatusCorrected ItemStatus = "corrected" // 訂正報で内容が変わった
+	StatusCancelled ItemStatus = "cancelled" // 取消報で取り消された
 )
 
 // Decision は、ある地点・種別の状態が old から new に変わったときの判定結果。
