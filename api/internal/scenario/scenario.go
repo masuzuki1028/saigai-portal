@@ -34,7 +34,7 @@ type Scenario struct {
 // Load はシナリオと、時刻順に並べた電文のパスを読む。
 func Load(dir string) (Scenario, []string, error) {
 	var sc Scenario
-	b, err := os.ReadFile(filepath.Join(dir, "scenario.json"))
+	b, err := os.ReadFile(filepath.Join(dir, "scenario.json")) //nolint:gosec // 開発者が指定したシナリオのディレクトリを読む（ローカル・テスト専用）
 	if err != nil {
 		return sc, nil, err
 	}
@@ -78,7 +78,7 @@ func Run(ctx context.Context, p *pipeline.Pipeline, files []string) (string, err
 		}
 	}
 	for _, f := range files {
-		data, err := os.ReadFile(f)
+		data, err := os.ReadFile(f) //nolint:gosec // Load で列挙したシナリオの電文を読む
 		if err != nil {
 			return "", err
 		}

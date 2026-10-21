@@ -77,7 +77,7 @@ func (in *Ingester) pollFeed(ctx context.Context, feed string, st *Stats) error 
 	if err != nil {
 		return err
 	}
-	defer res.Body.Close()
+	defer func() { _ = res.Body.Close() }()
 	st.Feeds++
 	if res.StatusCode == http.StatusNotModified {
 		return nil
@@ -157,7 +157,7 @@ func (in *Ingester) fetch(ctx context.Context, url string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer res.Body.Close()
+	defer func() { _ = res.Body.Close() }()
 	if res.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("telegram status %d", res.StatusCode)
 	}

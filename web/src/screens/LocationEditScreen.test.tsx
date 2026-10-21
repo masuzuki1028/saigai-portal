@@ -44,3 +44,16 @@ describe("LocationEditScreen", () => {
     expect(db.locations.get(IDS.HOME)?.version).toBe(2);
   });
 });
+
+describe("LocationEditScreen（沿岸の地点）", () => {
+  it("沿岸の地点では津波の設定を表示する", async () => {
+    renderLoggedIn(<LocationEditScreen id={IDS.OFFICE} />, "tsunami");
+    expect(await screen.findByRole("combobox", { name: "津波の通知" })).toHaveValue("3");
+  });
+
+  it("内陸の地点では津波の設定を表示しない", async () => {
+    renderLoggedIn(<LocationEditScreen id={IDS.PARENTS} />, "tsunami");
+    await screen.findByRole("textbox", { name: "名前" });
+    expect(screen.queryByRole("combobox", { name: "津波の通知" })).not.toBeInTheDocument();
+  });
+});

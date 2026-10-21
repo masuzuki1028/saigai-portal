@@ -36,7 +36,7 @@ func (g *GSIResolver) Resolve(ctx context.Context, lat, lon float64) (Area, erro
 	if err != nil {
 		return Area{}, fmt.Errorf("reverse geocoder: %w", err)
 	}
-	defer res.Body.Close()
+	defer func() { _ = res.Body.Close() }()
 	if res.StatusCode != http.StatusOK {
 		return Area{}, fmt.Errorf("reverse geocoder: status %d", res.StatusCode)
 	}

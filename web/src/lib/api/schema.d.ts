@@ -36,6 +36,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/me/delete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * @description 退会する。登録した地点・タイムライン・設定をすべて削除する（docs/04_data_model.md 8章）。
+         *     取り消せない操作のため、確認の文字列を送らせる。
+         */
+        post: operations["deleteAccount"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/me/notification-settings": {
         parameters: {
             query?: never;
@@ -204,7 +224,10 @@ export interface components {
             geohash6: string;
             /** @description 市区町村名 */
             areaName: string;
+            /** @description 海岸線から約 5km 以内の地点か。true のときだけ津波の設定を表示する */
             isCoastal: boolean;
+            /** @description 沿岸の地点が属する津波予報区（例 "新潟県上中下越"） */
+            tsunamiAreaName?: string;
             hazardSettings: components["schemas"]["HazardSettings"];
             /** @description 現在発表中の情報（種別ごとの最大レベル） */
             currentLevels: components["schemas"]["CurrentLevel"][];
@@ -320,6 +343,33 @@ export interface operations {
                     "application/json": components["schemas"]["Me"];
                 };
             };
+            401: components["responses"]["Unauthorized"];
+        };
+    };
+    deleteAccount: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @enum {string} */
+                    confirm: "delete";
+                };
+            };
+        };
+        responses: {
+            /** @description 削除した */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
         };
     };

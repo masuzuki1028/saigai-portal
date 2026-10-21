@@ -1,11 +1,86 @@
 {
-  "_comment": "気象警報・注意報（H27）の種類コード → 種別・severity。docs/04_data_model.md 4.1。気象庁の体系の見直しに合わせて、コードを変えずにこのファイルで差し替える",
-  "warnings": {
-    "33": { "name": "大雨特別警報", "hazard": "rain", "severity": 4, "landslideSeverity": 4 },
-    "03": { "name": "大雨警報", "hazard": "rain", "severity": 3, "landslideSeverity": 3 },
-    "10": { "name": "大雨注意報", "hazard": "rain", "severity": 2 },
-    "04": { "name": "洪水警報", "hazard": "flood", "severity": 3 },
-    "18": { "name": "洪水注意報", "hazard": "flood", "severity": 2 }
+  "_comment": "気象庁の種類コード → 種別・severity。docs/04_data_model.md 4.1。気象庁の体系の見直しに合わせて、コードを変えずにこのファイルで差し替える",
+  "_comments": {
+    "warnings": "気象警報・注意報（H27, VPWW54）の種類コード",
+    "landslideAlert": "土砂災害警戒情報（VXWW50。2026年5月からの表題はレベル４土砂災害危険警報）。コード 3 = 警戒",
+    "tsunami": "津波警報・注意報・予報（VTSE41）の Category/Kind/Code"
   },
-  "landslideNote": "土砂災害"
+  "warnings": {
+    "33": {
+      "name": "大雨特別警報",
+      "hazard": "rain",
+      "severity": 4,
+      "landslideSeverity": 4
+    },
+    "03": {
+      "name": "大雨警報",
+      "hazard": "rain",
+      "severity": 3,
+      "landslideSeverity": 3
+    },
+    "10": {
+      "name": "大雨注意報",
+      "hazard": "rain",
+      "severity": 2
+    },
+    "04": {
+      "name": "洪水警報",
+      "hazard": "flood",
+      "severity": 3
+    },
+    "18": {
+      "name": "洪水注意報",
+      "hazard": "flood",
+      "severity": 2
+    }
+  },
+  "landslideNote": "土砂災害",
+  "landslideAlert": {
+    "3": {
+      "name": "土砂災害警戒情報",
+      "severity": 4
+    }
+  },
+  "tsunami": {
+    "53": {
+      "name": "大津波警報",
+      "severity": 4
+    },
+    "52": {
+      "name": "大津波警報",
+      "severity": 4
+    },
+    "51": {
+      "name": "津波警報",
+      "severity": 3
+    },
+    "62": {
+      "name": "津波注意報",
+      "severity": 2
+    },
+    "71": {
+      "name": "津波予報（若干の海面変動）",
+      "severity": 1
+    },
+    "72": {
+      "name": "津波予報（若干の海面変動）",
+      "severity": 1
+    },
+    "73": {
+      "name": "津波予報（若干の海面変動）",
+      "severity": 1
+    },
+    "50": {
+      "name": "津波警報の解除",
+      "severity": 0
+    },
+    "60": {
+      "name": "津波注意報の解除",
+      "severity": 0
+    },
+    "00": {
+      "name": "津波なし",
+      "severity": 0
+    }
+  }
 }

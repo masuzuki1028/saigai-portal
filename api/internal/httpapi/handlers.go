@@ -62,6 +62,19 @@ func (s *Server) SendTestNotification(ctx context.Context, _ apigen.SendTestNoti
 	return apigen.SendTestNotification202Response{}, nil
 }
 
+// DeleteAccount は退会する。認証基盤（Cognito）のユーザーの削除は AWS への構築時に追加する。
+func (s *Server) DeleteAccount(ctx context.Context, _ apigen.DeleteAccountRequestObject) (apigen.DeleteAccountResponseObject, error) {
+	u, err := mustUser(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if err := s.Store.DeleteUserData(ctx, u); err != nil {
+		return nil, err
+	}
+	s.Log.Info("account deleted", "userId", u.ID)
+	return apigen.DeleteAccount204Response{}, nil
+}
+
 func (s *Server) ListLocations(ctx context.Context, _ apigen.ListLocationsRequestObject) (apigen.ListLocationsResponseObject, error) {
 	u, err := mustUser(ctx)
 	if err != nil {
@@ -111,7 +124,7 @@ func (s *Server) CreateLocation(ctx context.Context, req apigen.CreateLocationRe
 	}
 	now := time.Now().UTC()
 	l := store.Location{OwnerKey: u.OwnerKey(), ID: ulid.Make().String(), Version: 1, CreatedAt: now}
-	if msg, err := s.fill(ctx, &l, apigen.LocationInput(*req.Body), now, false); err != nil {
+	if msg, err := s.fill(ctx, &l, *req.Body, now, false); err != nil {
 		return nil, err
 	} else if msg != "" {
 		return apigen.CreateLocation400JSONResponse{BadRequestJSONResponse: apigen.BadRequestJSONResponse(errBody("bad_request", msg))}, nil
@@ -176,6 +189,9 @@ func (s *Server) DeleteLocation(ctx context.Context, req apigen.DeleteLocationRe
 		return nil, err
 	}
 	if err := s.Store.DeleteLocation(ctx, l); err != nil && !errors.Is(err, store.ErrNotFound) {
+		return nil, err
+	}
+	if err := s.Store.DeleteTimeline(ctx, l.ID); err != nil {
 		return nil, err
 	}
 	return apigen.DeleteLocation204Response{}, nil
@@ -251,7 +267,11 @@ func (s *Server) fill(ctx context.Context, l *store.Location, in apigen.Location
 		return "災害の設定が正しくありません", nil
 	}
 	a := area.Area{MuniCode: l.MuniCode, Name: l.AreaName, WarnKey: l.WarnKey, QuakeKey: l.QuakeKey, IsCoastal: l.IsCoastal}
+	tsunamiKey, tsunamiName := l.TsunamiKey, l.TsunamiName
 	if !keepArea {
+		// 海岸線から一定の距離内なら沿岸の地点とし、一番近い津波予報区に結び付ける
+		z, _, coastal := area.NearestTsunamiZone(in.Coord.Lat, in.Coord.Lon)
+		tsunamiKey, tsunamiName = z.Code, z.Name
 		a, err = s.Resolver.Resolve(ctx, in.Coord.Lat, in.Coord.Lon)
 		if errors.Is(err, area.ErrNotFound) {
 			return "この場所の市区町村が見つかりません", nil
@@ -259,6 +279,7 @@ func (s *Server) fill(ctx context.Context, l *store.Location, in apigen.Location
 		if err != nil {
 			return "", fmt.Errorf("resolve area: %w", err)
 		}
+		a.IsCoastal = coastal
 	}
 	coord, err := s.Sealer.Seal(ctx, []byte(formatCoord(in.Coord.Lat, in.Coord.Lon)), []byte(l.ID))
 	if err != nil {
@@ -274,6 +295,7 @@ func (s *Server) fill(ctx context.Context, l *store.Location, in apigen.Location
 	l.Geohash6 = geohash.EncodeWithPrecision(in.Coord.Lat, in.Coord.Lon, 6)
 	l.CoordEnc = coord
 	l.MuniCode, l.AreaName, l.WarnKey, l.QuakeKey, l.IsCoastal = a.MuniCode, a.Name, a.WarnKey, a.QuakeKey, a.IsCoastal
+	l.TsunamiKey, l.TsunamiName = tsunamiKey, tsunamiName
 	l.UpdatedAt = now
 	l.WrittenBy = s.Store.WrittenBy
 	return "", nil
@@ -309,6 +331,10 @@ func (s *Server) toAPI(ctx context.Context, l store.Location) (apigen.Location, 
 		Id: l.ID, Name: l.Name, Coord: apigen.LatLon{Lat: lat, Lon: lon}, RadiusM: apigen.RadiusM(l.RadiusM),
 		Geohash6: l.Geohash6, AreaName: l.AreaName, IsCoastal: l.IsCoastal, HazardSettings: toAPISettings(l.HazardSettings),
 		Version: l.Version, CreatedAt: l.CreatedAt, UpdatedAt: l.UpdatedAt, CurrentLevels: []apigen.CurrentLevel{},
+	}
+	if l.TsunamiName != "" {
+		n := l.TsunamiName
+		out.TsunamiAreaName = &n
 	}
 	if len(l.AddressEnc) > 0 {
 		addr, err := s.Sealer.Open(ctx, l.AddressEnc, []byte(l.ID))

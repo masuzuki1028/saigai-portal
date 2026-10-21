@@ -4,7 +4,7 @@ import type { HazardSettings, Location, TimelineItem } from "@/lib/api/client";
  * シナリオ単位のモックデータ（docs/08_test_strategy.md 3章）。
  * 画面の開発（npm run dev:mock）・Vitest・Playwright で共通に使う。
  */
-export type ScenarioName = "normal" | "heavy-rain" | "earthquake" | "empty";
+export type ScenarioName = "normal" | "heavy-rain" | "earthquake" | "tsunami" | "empty";
 
 export type ScenarioData = {
   label: string;
@@ -41,6 +41,7 @@ function location(id: string, name: string, areaName: string, lat: number, lon: 
 }
 
 const HOME = "01JHOME0000000000000000000";
+const OFFICE = "01JOFFICE00000000000000000";
 const PARENTS = "01JPARENTS0000000000000000";
 
 function item(id: string, issuedAt: string, extra: Partial<TimelineItem>): TimelineItem {
@@ -96,6 +97,32 @@ export const scenarios: Record<ScenarioName, ScenarioData> = {
       [HOME]: [],
     },
   },
+  tsunami: {
+    label: "津波警報の発表中",
+    locations: [
+      location(OFFICE, "新潟の職場", "新潟市中央区", 37.9161, 139.0364, {
+        isCoastal: true,
+        tsunamiAreaName: "新潟県上中下越",
+        currentLevels: [{ hazard: "tsunami", severity: 3, title: "津波警報" }],
+      }),
+      location(PARENTS, "実家", "長岡市", 37.4462, 138.8512),
+    ],
+    timelines: {
+      [OFFICE]: [
+        item("t2", "2026-09-01T10:35:00+09:00", {
+          hazard: "tsunami", severity: 3, title: "津波警報", notified: true,
+          summary: "津波警報（新潟県上中下越）。10時40分ころ到達予想。予想される津波の高さ: 3m。新潟県上中下越に津波警報を発表しました。ただちに避難してください。",
+          sourceUrl: "https://www.jma.go.jp/bosai/map.html#contents=tsunami",
+        }),
+        item("t1", "2026-09-01T10:13:00+09:00", {
+          hazard: "tsunami", severity: 2, title: "津波注意報",
+          summary: "津波注意報（新潟県上中下越）。10時40分ころ到達予想。予想される津波の高さ: 1m。日本海沿岸に津波注意報を発表しました。",
+          sourceUrl: "https://www.jma.go.jp/bosai/map.html#contents=tsunami",
+        }),
+      ],
+      [PARENTS]: [],
+    },
+  },
   earthquake: {
     label: "震度6弱の地震",
     locations: [
@@ -120,4 +147,4 @@ export const scenarios: Record<ScenarioName, ScenarioData> = {
   },
 };
 
-export const IDS = { HOME, PARENTS };
+export const IDS = { HOME, PARENTS, OFFICE };

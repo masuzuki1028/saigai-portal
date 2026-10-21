@@ -18,12 +18,16 @@ export const LOCAL_USERS = [
 
 const SESSION_KEY = "saigai.localToken";
 
+/** ログアウトの理由。退会のときはログイン画面ではなくトップに戻す */
+export type LogoutReason = "user" | "expired" | "deleted";
+
 type AuthState = {
   token: string | null;
   userLabel: string | null;
   api: Api;
+  lastLogout: LogoutReason | null;
   loginLocal: (userId: string) => void;
-  logout: () => void;
+  logout: (reason?: LogoutReason) => void;
 };
 
 const AuthContext = createContext<AuthState | null>(null);
@@ -38,8 +42,10 @@ function readSession(): string | null {
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [token, setToken] = useState<string | null>(() => readSession());
+  const [lastLogout, setLastLogout] = useState<LogoutReason | null>(null);
 
-  const logout = useCallback(() => {
+  const logout = useCallback((reason: LogoutReason = "user") => {
+    setLastLogout(reason);
     try {
       window.sessionStorage.removeItem(SESSION_KEY);
     } catch {
@@ -59,10 +65,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setToken(u.token);
   }, []);
 
-  const api = useMemo(() => createApi(() => token, logout), [token, logout]);
+  const api = useMemo(() => createApi(() => token, () => logout("expired")), [token, logout]);
   const userLabel = LOCAL_USERS.find((u) => u.token === token)?.id ?? null;
 
-  const value = useMemo(() => ({ token, userLabel, api, loginLocal, logout }), [token, userLabel, api, loginLocal, logout]);
+  const value = useMemo(() => ({ token, userLabel, api, lastLogout, loginLocal, logout }), [token, userLabel, api, lastLogout, loginLocal, logout]);
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 

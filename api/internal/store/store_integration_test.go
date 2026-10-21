@@ -145,3 +145,35 @@ func TestTimelinePagingAndCursor(t *testing.T) {
 		t.Errorf("壊れたカーソルを受け付けた: %v", err)
 	}
 }
+
+func TestDeleteUserData(t *testing.T) {
+	s := storetest.New(t)
+	ctx := context.Background()
+	u, _ := s.ResolveUser(ctx, auth.Principal{Issuer: "local", Subject: "alice"})
+	l := newLocation(u.OwnerKey(), "01JAAAAAAAAAAAAAAAAAAAAAAA")
+	if err := s.CreateLocation(ctx, l); err != nil {
+		t.Fatal(err)
+	}
+	_ = s.PutTimelineItem(ctx, l.ID, store.TimelineItem{ID: "a", IssuedAt: time.Now()})
+	_, _ = s.PutState(ctx, l.ID, store.HazardState{Key: "rain", Severity: 3, ReportTime: time.Now()})
+
+	if err := s.DeleteUserData(ctx, u); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := s.GetUser(ctx, u.ID); !errors.Is(err, store.ErrNotFound) {
+		t.Errorf("プロフィールが残っている: %v", err)
+	}
+	if es, _ := s.QueryArea(ctx, store.AreaWarn, "15202"); len(es) != 0 {
+		t.Errorf("逆引きが残っている: %+v", es)
+	}
+	if items, _, _ := s.QueryTimeline(ctx, l.ID, 10, ""); len(items) != 0 {
+		t.Errorf("タイムラインが残っている: %+v", items)
+	}
+	if sts, _ := s.ListStates(ctx, l.ID); len(sts) != 0 {
+		t.Errorf("状態が残っている: %+v", sts)
+	}
+	// 同じ sub でログインし直すと、別の userId が発行される
+	if again, _ := s.ResolveUser(ctx, auth.Principal{Issuer: "local", Subject: "alice"}); again.ID == u.ID {
+		t.Error("退会前と同じ userId が使われた")
+	}
+}

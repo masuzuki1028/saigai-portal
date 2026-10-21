@@ -62,7 +62,7 @@ export function HazardSettingsFields({ value, onChange, isCoastal }: { value: Ha
           </tr>
         </tbody>
       </table>
-      {!isCoastal && <p className="muted">津波の設定は、海沿いの地点にだけ表示します（判定は今後対応します）。</p>}
+      {!isCoastal && <p className="muted">津波の設定は、海岸から約5km以内の地点にだけ表示します（登録後に判定します）。</p>}
     </fieldset>
   );
 }

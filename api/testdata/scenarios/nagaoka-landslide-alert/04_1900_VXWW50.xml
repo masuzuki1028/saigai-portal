@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 災害シナリオ用に作成した電文（実在の発表ではない）。構造は土砂災害警戒情報（VXWW50）に合わせている -->
+<Report xmlns="http://xml.kishou.go.jp/jmaxml1/" xmlns:jmx="http://xml.kishou.go.jp/jmaxml1/">
+<Control>
+<Title>土砂災害警戒情報</Title>
+<DateTime>2026-07-10T10:00:00Z</DateTime>
+<Status>通常</Status>
+<EditorialOffice>新潟地方気象台</EditorialOffice>
+<PublishingOffice>新潟県 新潟地方気象台</PublishingOffice>
+</Control>
+<Head xmlns="http://xml.kishou.go.jp/jmaxml1/informationBasis1/">
+<Title>新潟県レベル４土砂災害危険警報</Title>
+<ReportDateTime>2026-07-10T19:00:00+09:00</ReportDateTime>
+<TargetDateTime>2026-07-10T19:00:00+09:00</TargetDateTime>
+<EventID>新潟県土砂災害警戒情報</EventID>
+<InfoType>発表</InfoType>
+<Serial>3</Serial>
+<InfoKind>土砂災害警戒情報</InfoKind>
+<InfoKindVersion>1.0_0</InfoKindVersion>
+<Headline>
+<Text>長岡市の土砂災害警戒情報を解除します。</Text>
+</Headline>
+</Head>
+<Body xmlns="http://xml.kishou.go.jp/jmaxml1/body/meteorology1/">
+<TargetArea><Name>新潟県</Name><Code>150000</Code></TargetArea>
+<Warning type="土砂災害警戒情報">
+<Item>
+<Kind><Name>解除</Name><Code>3</Code><Status>解除</Status></Kind>
+<Area><Name>長岡市</Name><Code>1520200</Code></Area>
+</Item>
+<Item>
+<Kind><Name>なし</Name><Code>0</Code><Status>なし</Status></Kind>
+<Area><Name>新潟市</Name><Code>1510000</Code></Area>
+</Item>
+</Warning>
+</Body>
+</Report>

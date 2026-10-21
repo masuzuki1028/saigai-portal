@@ -1,0 +1,29 @@
+# golangci-lint v2 の設定。gosec でセキュリティ上の問題も検出する（docs/07_security.md 4.1）
+version: "2"
+run:
+  build-tags: [integration, local]
+linters:
+  default: standard # errcheck, govet, ineffassign, staticcheck, unused
+  enable:
+    - gosec
+    - bodyclose
+    - noctx
+    - errorlint
+    - misspell
+    - unconvert
+  settings:
+    gosec:
+      excludes:
+        - G104 # errcheck と重複
+  exclusions:
+    generated: strict
+    rules:
+      # テスト・ローカル用のコードの、固定のテスト用値やファイル読み込み
+      - path: _test\.go
+        linters: [gosec, noctx]
+      # データを生成する手動のツール
+      - path: internal/area/gen(muni|tsunami)/
+        linters: [gosec, errcheck]
+formatters:
+  enable:
+    - gofmt

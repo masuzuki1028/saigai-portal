@@ -222,6 +222,21 @@ func (e TimelineItemStatus) Valid() bool {
 	}
 }
 
+// Defines values for DeleteAccountJSONBodyConfirm.
+const (
+	Delete DeleteAccountJSONBodyConfirm = "delete"
+)
+
+// Valid indicates whether the value is a known member of the DeleteAccountJSONBodyConfirm enum.
+func (e DeleteAccountJSONBodyConfirm) Valid() bool {
+	switch e {
+	case Delete:
+		return true
+	default:
+		return false
+	}
+}
+
 // CurrentLevel defines model for CurrentLevel.
 type CurrentLevel struct {
 	Hazard Hazard `json:"hazard"`
@@ -300,11 +315,16 @@ type Location struct {
 	Geohash6       string         `json:"geohash6"`
 	HazardSettings HazardSettings `json:"hazardSettings"`
 	Id             string         `json:"id"`
-	IsCoastal      bool           `json:"isCoastal"`
-	Name           string         `json:"name"`
-	RadiusM        RadiusM        `json:"radiusM"`
-	UpdatedAt      time.Time      `json:"updatedAt"`
-	Version        int            `json:"version"`
+
+	// IsCoastal 海岸線から約 5km 以内の地点か。true のときだけ津波の設定を表示する
+	IsCoastal bool    `json:"isCoastal"`
+	Name      string  `json:"name"`
+	RadiusM   RadiusM `json:"radiusM"`
+
+	// TsunamiAreaName 沿岸の地点が属する津波予報区（例 "新潟県上中下越"）
+	TsunamiAreaName *string   `json:"tsunamiAreaName,omitempty"`
+	UpdatedAt       time.Time `json:"updatedAt"`
+	Version         int       `json:"version"`
 }
 
 // LocationInput defines model for LocationInput.
@@ -420,11 +440,22 @@ type GetTimelineParams struct {
 	Cursor *string `form:"cursor,omitempty" json:"cursor,omitempty"`
 }
 
+// DeleteAccountJSONBody defines parameters for DeleteAccount.
+type DeleteAccountJSONBody struct {
+	Confirm DeleteAccountJSONBodyConfirm `json:"confirm"`
+}
+
+// DeleteAccountJSONBodyConfirm defines parameters for DeleteAccount.
+type DeleteAccountJSONBodyConfirm string
+
 // CreateLocationJSONRequestBody defines body for CreateLocation for application/json ContentType.
 type CreateLocationJSONRequestBody = LocationInput
 
 // UpdateLocationJSONRequestBody defines body for UpdateLocation for application/json ContentType.
 type UpdateLocationJSONRequestBody = LocationUpdate
+
+// DeleteAccountJSONRequestBody defines body for DeleteAccount for application/json ContentType.
+type DeleteAccountJSONRequestBody DeleteAccountJSONBody
 
 // PutNotificationSettingsJSONRequestBody defines body for PutNotificationSettings for application/json ContentType.
 type PutNotificationSettingsJSONRequestBody = NotificationSettings
@@ -455,6 +486,9 @@ type ServerInterface interface {
 
 	// (GET /me)
 	GetMe(w http.ResponseWriter, r *http.Request)
+
+	// (POST /me/delete)
+	DeleteAccount(w http.ResponseWriter, r *http.Request)
 
 	// (GET /me/notification-settings)
 	GetNotificationSettings(w http.ResponseWriter, r *http.Request)
@@ -706,6 +740,26 @@ func (siw *ServerInterfaceWrapper) GetMe(w http.ResponseWriter, r *http.Request)
 	handler.ServeHTTP(w, r)
 }
 
+// DeleteAccount operation middleware
+func (siw *ServerInterfaceWrapper) DeleteAccount(w http.ResponseWriter, r *http.Request) {
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeleteAccount(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // GetNotificationSettings operation middleware
 func (siw *ServerInterfaceWrapper) GetNotificationSettings(w http.ResponseWriter, r *http.Request) {
 
@@ -894,6 +948,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/locations/{locationId}", wrapper.UpdateLocation)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/locations/{locationId}/timeline", wrapper.GetTimeline)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/me", wrapper.GetMe)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/me/delete", wrapper.DeleteAccount)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/me/notification-settings", wrapper.GetNotificationSettings)
 	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/me/notification-settings", wrapper.PutNotificationSettings)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/me/notification-settings/test", wrapper.SendTestNotification)
@@ -1328,6 +1383,50 @@ func (response GetMe401JSONResponse) VisitGetMeResponse(w http.ResponseWriter) e
 	return err
 }
 
+type DeleteAccountRequestObject struct {
+	Body *DeleteAccountJSONRequestBody
+}
+
+type DeleteAccountResponseObject interface {
+	VisitDeleteAccountResponse(w http.ResponseWriter) error
+}
+
+type DeleteAccount204Response struct {
+}
+
+func (response DeleteAccount204Response) VisitDeleteAccountResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type DeleteAccount400JSONResponse struct{ BadRequestJSONResponse }
+
+func (response DeleteAccount400JSONResponse) VisitDeleteAccountResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteAccount401JSONResponse struct{ UnauthorizedJSONResponse }
+
+func (response DeleteAccount401JSONResponse) VisitDeleteAccountResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type GetNotificationSettingsRequestObject struct {
 }
 
@@ -1482,6 +1581,9 @@ type StrictServerInterface interface {
 
 	// (GET /me)
 	GetMe(ctx context.Context, request GetMeRequestObject) (GetMeResponseObject, error)
+
+	// (POST /me/delete)
+	DeleteAccount(ctx context.Context, request DeleteAccountRequestObject) (DeleteAccountResponseObject, error)
 
 	// (GET /me/notification-settings)
 	GetNotificationSettings(ctx context.Context, request GetNotificationSettingsRequestObject) (GetNotificationSettingsResponseObject, error)
@@ -1737,6 +1839,37 @@ func (sh *strictHandler) GetMe(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// DeleteAccount operation middleware
+func (sh *strictHandler) DeleteAccount(w http.ResponseWriter, r *http.Request) {
+	var request DeleteAccountRequestObject
+
+	var body DeleteAccountJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.DeleteAccount(ctx, request.(DeleteAccountRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DeleteAccount")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DeleteAccountResponseObject); ok {
+		if err := validResponse.VisitDeleteAccountResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // GetNotificationSettings operation middleware
 func (sh *strictHandler) GetNotificationSettings(w http.ResponseWriter, r *http.Request) {
 	var request GetNotificationSettingsRequestObject
@@ -1821,52 +1954,57 @@ func (sh *strictHandler) SendTestNotification(w http.ResponseWriter, r *http.Req
 // const string: with thousands of chunks the chained `+` fold is several
 // times slower for the Go compiler than parsing a slice literal.
 var swaggerSpec = []string{
-	"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",
+	"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",
+	"AP//",
 }
 
 // decodeSpec returns the embedded OpenAPI spec as raw JSON bytes,

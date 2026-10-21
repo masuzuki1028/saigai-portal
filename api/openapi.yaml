@@ -37,6 +37,31 @@ paths:
         "401":
           $ref: "#/components/responses/Unauthorized"
 
+  /me/delete:
+    post:
+      operationId: deleteAccount
+      description: |
+        退会する。登録した地点・タイムライン・設定をすべて削除する（docs/04_data_model.md 8章）。
+        取り消せない操作のため、確認の文字列を送らせる。
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [confirm]
+              properties:
+                confirm:
+                  type: string
+                  enum: [delete]
+      responses:
+        "204":
+          description: 削除した
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
   /me/notification-settings:
     get:
       operationId: getNotificationSettings
@@ -426,6 +451,10 @@ components:
           description: 市区町村名
         isCoastal:
           type: boolean
+          description: 海岸線から約 5km 以内の地点か。true のときだけ津波の設定を表示する
+        tsunamiAreaName:
+          type: string
+          description: 沿岸の地点が属する津波予報区（例 "新潟県上中下越"）
         hazardSettings:
           $ref: "#/components/schemas/HazardSettings"
         currentLevels:

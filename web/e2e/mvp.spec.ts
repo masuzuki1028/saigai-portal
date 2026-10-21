@@ -61,3 +61,24 @@ test("地震のシナリオで、震度とレベルが表示される", async ({
   await expect(page.getByRole("region", { name: "発表中の情報" })).toContainText("地震（長岡市 震度6弱）");
   await expect(page.getByRole("region", { name: "タイムライン" }).getByRole("listitem").first()).toContainText("震度6弱以上");
 });
+
+test("津波警報の発表中は、沿岸の地点に津波予報区とレベルが表示される", async ({ page }) => {
+  await login(page, "tsunami");
+  await page.getByRole("link", { name: /新潟の職場/ }).click();
+  await expect(page.getByText("津波予報区: 新潟県上中下越")).toBeVisible();
+  const first = page.getByRole("region", { name: "タイムライン" }).getByRole("listitem").first();
+  await expect(first).toContainText(/津波\s*警報/);
+  await expect(first).toContainText("到達予想");
+  await expectNoSeriousA11yViolations(page);
+});
+
+test("退会すると、トップに戻りログアウトする", async ({ page }) => {
+  await login(page);
+  await page.getByRole("link", { name: "アカウント" }).click();
+  await page.getByRole("textbox", { name: /「削除」と入力/ }).fill("削除");
+  await expectNoSeriousA11yViolations(page);
+  await page.getByRole("button", { name: "退会してデータを削除する" }).click();
+  await expect(page.getByRole("status")).toHaveText(/退会しました/);
+  await page.goto("/app");
+  await expect(page).toHaveURL(/\/login/);
+});

@@ -18,6 +18,8 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"slices"
+	"strings"
 
 	"github.com/masuzuki1028/saigai-portal/api/internal/localenv"
 	"github.com/masuzuki1028/saigai-portal/api/internal/scenario"
@@ -79,7 +81,13 @@ func main() {
 		fail(err)
 	}
 	fmt.Print(res)
-	fmt.Printf("\n通知のメール: http://localhost:8025\n画面: %s/app （alice でログイン）\n", env.AppBaseURL)
+	users := []string{}
+	for _, l := range sc.Locations {
+		if !slices.Contains(users, l.User) {
+			users = append(users, l.User)
+		}
+	}
+	fmt.Printf("\n通知のメール: http://localhost:8025\n画面: %s/app （%s でログイン）\n", env.AppBaseURL, strings.Join(users, " / "))
 }
 
 // seedOnce は、まだ同じ名前の地点がない利用者にだけシナリオの地点を登録する（繰り返し実行しても増えない）。

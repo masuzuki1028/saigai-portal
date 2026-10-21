@@ -2,7 +2,9 @@
 //
 // 対応している電文:
 //   - 気象警報・注意報（Ｈ２７）（VPWW54）
+//   - 土砂災害警戒情報（VXWW50）
 //   - 震源・震度に関する情報（VXSE53）
+//   - 津波警報・注意報・予報a（VTSE41）
 //
 // 出典: 気象庁防災情報 XML（https://xml.kishou.go.jp/）
 package jma
@@ -26,8 +28,10 @@ const Source = "jma_xml"
 
 // 取り込む電文の表題（Control/Title）。
 const (
-	TitleWarning = "気象警報・注意報（Ｈ２７）"
-	TitleQuake   = "震源・震度に関する情報"
+	TitleWarning   = "気象警報・注意報（Ｈ２７）"
+	TitleLandslide = "土砂災害警戒情報"
+	TitleQuake     = "震源・震度に関する情報"
+	TitleTsunami   = "津波警報・注意報・予報a"
 )
 
 // ErrUnsupported は対応していない電文。
@@ -49,7 +53,15 @@ type severityMap struct {
 		Severity          domain.Severity `json:"severity"`
 		LandslideSeverity domain.Severity `json:"landslideSeverity"`
 	} `json:"warnings"`
-	LandslideNote string `json:"landslideNote"`
+	LandslideNote  string `json:"landslideNote"`
+	LandslideAlert map[string]struct {
+		Name     string          `json:"name"`
+		Severity domain.Severity `json:"severity"`
+	} `json:"landslideAlert"`
+	Tsunami map[string]struct {
+		Name     string          `json:"name"`
+		Severity domain.Severity `json:"severity"`
+	} `json:"tsunami"`
 }
 
 var sevMap = func() severityMap {
@@ -92,6 +104,25 @@ type report struct {
 				} `xml:"Area"`
 			} `xml:"Item"`
 		} `xml:"Warning"`
+		Tsunami struct {
+			Items []struct {
+				Area struct {
+					Name string `xml:"Name"`
+					Code string `xml:"Code"`
+				} `xml:"Area"`
+				Kind struct {
+					Name string `xml:"Name"`
+					Code string `xml:"Code"`
+				} `xml:"Category>Kind"`
+				FirstHeight struct {
+					ArrivalTime string `xml:"ArrivalTime"`
+					Condition   string `xml:"Condition"`
+				} `xml:"FirstHeight"`
+				MaxHeight struct {
+					Description string `xml:"description,attr"`
+				} `xml:"MaxHeight>TsunamiHeight"`
+			} `xml:"Forecast>Item"`
+		} `xml:"Tsunami"`
 		Earthquake struct {
 			OriginTime string `xml:"OriginTime"`
 			Hypocenter struct {
@@ -124,12 +155,18 @@ type report struct {
 // Parse は電文を解析する。telegramID はフィードの entry/id（電文の URL）。
 // 訓練・試験の電文と、対応していない電文は ErrUnsupported を返す。
 func Parse(data []byte, telegramID string) (*domain.Event, error) {
+	return parse(data, telegramID, false)
+}
+
+// parse は電文を解析する。acceptTraining は気象庁のサンプル電文（訓練）をテストで解析するときだけ true にする。
+func parse(data []byte, telegramID string, acceptTraining bool) (*domain.Event, error) {
 	var r report
 	dec := xml.NewDecoder(bytes.NewReader(data))
 	if err := dec.Decode(&r); err != nil {
 		return nil, fmt.Errorf("decode telegram: %w", err)
 	}
-	if r.Control.Status != "通常" {
+	accepted := r.Control.Status == "通常" || (acceptTraining && r.Control.Status == "訓練")
+	if !accepted {
 		return nil, fmt.Errorf("%w: status %q", ErrUnsupported, r.Control.Status)
 	}
 	issuedAt, err := time.Parse(time.RFC3339, r.Head.ReportDateTime)
@@ -149,6 +186,12 @@ func Parse(data []byte, telegramID string) (*domain.Event, error) {
 	case TitleWarning:
 		ev.Kind = domain.EventWarning
 		ev.Warnings = parseWarnings(&r)
+	case TitleLandslide:
+		ev.Kind = domain.EventLandslide
+		ev.Warnings = parseLandslide(&r)
+	case TitleTsunami:
+		ev.Kind = domain.EventTsunami
+		ev.Tsunami = parseTsunami(&r)
 	case TitleQuake:
 		ev.Kind = domain.EventEarthquake
 		q, err := parseQuake(&r)
@@ -195,6 +238,52 @@ func parseWarnings(r *report) []domain.AreaWarning {
 		}
 	}
 	return out
+}
+
+const landslideWarningType = "土砂災害警戒情報"
+
+// parseLandslide は土砂災害警戒情報を、土砂災害の種別の警報として Warnings に入れる。
+func parseLandslide(r *report) []domain.AreaWarning {
+	var out []domain.AreaWarning
+	for _, w := range r.Body.Warnings {
+		if w.Type != landslideWarningType {
+			continue
+		}
+		for _, it := range w.Items {
+			aw := domain.AreaWarning{AreaCode: it.Area.Code, AreaName: it.Area.Name}
+			for _, k := range it.Kinds {
+				m, ok := sevMap.LandslideAlert[k.Code]
+				if !ok {
+					continue // なし
+				}
+				aw.Kinds = append(aw.Kinds, domain.WarningKind{
+					Code: k.Code, Name: m.Name, Status: k.Status, Hazard: domain.Landslide, Severity: m.Severity,
+					Active: k.Status != "解除" && k.Status != "なし",
+				})
+			}
+			out = append(out, aw)
+		}
+	}
+	return out
+}
+
+func parseTsunami(r *report) *domain.TsunamiInfo {
+	t := &domain.TsunamiInfo{EventID: r.Head.EventID}
+	for _, it := range r.Body.Tsunami.Items {
+		m, ok := sevMap.Tsunami[it.Kind.Code]
+		if !ok {
+			continue // 対応表にない種類（新しい体系のコードなど）は扱わない
+		}
+		arrival := it.FirstHeight.Condition
+		if at, err := time.Parse(time.RFC3339, it.FirstHeight.ArrivalTime); err == nil {
+			arrival = at.Format("15時04分") + "ころ到達予想"
+		}
+		t.Areas = append(t.Areas, domain.TsunamiArea{
+			Code: it.Area.Code, Name: it.Area.Name, KindCode: it.Kind.Code, KindName: m.Name,
+			Severity: m.Severity, ArrivalTime: arrival, MaxHeight: it.MaxHeight.Description,
+		})
+	}
+	return t
 }
 
 func isActive(code, status string) bool {

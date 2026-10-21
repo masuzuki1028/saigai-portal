@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 災害シナリオ用に作成した電文（実在の発表ではない）。構造は津波警報・注意報・予報a（VTSE41）に合わせている -->
+<Report xmlns="http://xml.kishou.go.jp/jmaxml1/" xmlns:jmx="http://xml.kishou.go.jp/jmaxml1/">
+<Control>
+<Title>津波警報・注意報・予報a</Title>
+<DateTime>2026-09-01T06:00:00Z</DateTime>
+<Status>通常</Status>
+<EditorialOffice>気象庁本庁</EditorialOffice>
+<PublishingOffice>気象庁</PublishingOffice>
+</Control>
+<Head xmlns="http://xml.kishou.go.jp/jmaxml1/informationBasis1/">
+<Title>津波予報</Title>
+<ReportDateTime>2026-09-01T15:00:00+09:00</ReportDateTime>
+<TargetDateTime>2026-09-01T15:00:00+09:00</TargetDateTime>
+<EventID>20260901101000</EventID>
+<InfoType>発表</InfoType>
+<Serial></Serial>
+<InfoKind>津波警報・注意報・予報</InfoKind>
+<InfoKindVersion>1.0_1</InfoKindVersion>
+<Headline>
+<Text>津波注意報を解除しました。</Text>
+</Headline>
+</Head>
+<Body xmlns="http://xml.kishou.go.jp/jmaxml1/body/seismology1/" xmlns:jmx_eb="http://xml.kishou.go.jp/jmaxml1/elementBasis1/">
+<Tsunami>
+<Forecast>
+<Item>
+<Area><Name>新潟県上中下越</Name><Code>340</Code></Area>
+<Category><Kind><Name>津波注意報解除</Name><Code>60</Code></Kind></Category>
+
+</Item>
+<Item>
+<Area><Name>佐渡</Name><Code>342</Code></Area>
+<Category><Kind><Name>津波注意報解除</Name><Code>60</Code></Kind></Category>
+
+</Item>
+</Forecast>
+</Tsunami>
+</Body>
+</Report>

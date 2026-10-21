@@ -2,6 +2,7 @@ package store
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -106,5 +107,27 @@ func (s *Store) SetEmailEnabled(ctx context.Context, id string, enabled bool) er
 	if isConditionFailed(err) {
 		return ErrNotFound
 	}
+	return err
+}
+
+// DeleteUserData は退会した利用者のデータをすべて削除する（地点・逆引き・タイムライン・状態・プロフィール）。
+// 途中で失敗しても再実行できるよう、プロフィールと sub の対応は最後に消す。
+func (s *Store) DeleteUserData(ctx context.Context, u User) error {
+	locs, err := s.ListLocations(ctx, u.OwnerKey())
+	if err != nil {
+		return err
+	}
+	for _, l := range locs {
+		if err := s.DeleteLocation(ctx, l); err != nil && !errors.Is(err, ErrNotFound) {
+			return err
+		}
+		if err := s.DeleteTimeline(ctx, l.ID); err != nil {
+			return err
+		}
+	}
+	_, err = s.DB.TransactWriteItems(ctx, &dynamodb.TransactWriteItemsInput{TransactItems: []types.TransactWriteItem{
+		{Delete: &types.Delete{TableName: &s.Tables.App, Key: key(subPK(u.Principal()), "META")}},
+		{Delete: &types.Delete{TableName: &s.Tables.App, Key: key(userPK(u.ID), "PROFILE")}},
+	}})
 	return err
 }

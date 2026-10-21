@@ -1,0 +1,4 @@
+# infra/ と .github/ の変更はレビューを必須にする（docs/06_deploy_flow.md 2章）
+*          @masuzuki1028
+/infra/    @masuzuki1028
+/.github/  @masuzuki1028

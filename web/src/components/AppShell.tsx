@@ -10,11 +10,11 @@ import { Disclaimer } from "./Disclaimer";
 
 /** ログインが必要な画面の枠。未ログインならログイン画面へ移る */
 export function AppShell({ title, back, children }: { title: string; back?: string; children: ReactNode }) {
-  const { token, userLabel, logout } = useAuth();
+  const { token, userLabel, lastLogout, logout } = useAuth();
   const router = useRouter();
   useEffect(() => {
-    if (!token) router.replace("/login");
-  }, [token, router]);
+    if (!token) router.replace(lastLogout === "deleted" ? "/?deleted=1" : "/login");
+  }, [token, lastLogout, router]);
   if (!token) return null;
   return (
     <>
@@ -31,7 +31,8 @@ export function AppShell({ title, back, children }: { title: string; back?: stri
         <h1>{title}</h1>
         <nav aria-label="アカウント" className="header-nav">
           <Link href="/app/settings/notifications">通知</Link>
-          <button type="button" className="link" onClick={logout}>
+          <Link href="/app/settings/account">アカウント</Link>
+          <button type="button" className="link" onClick={() => logout()}>
             ログアウト{userLabel ? `（${userLabel}）` : ""}
           </button>
         </nav>

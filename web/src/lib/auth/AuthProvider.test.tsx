@@ -9,7 +9,7 @@ function Probe() {
     <>
       <p>{token ? "ログイン中" : "未ログイン"}</p>
       <button onClick={() => loginLocal("alice")}>login</button>
-      <button onClick={logout}>logout</button>
+      <button onClick={() => logout()}>logout</button>
     </>
   );
 }

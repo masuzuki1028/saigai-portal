@@ -1,14 +1,16 @@
 import Link from "next/link";
 
+import { DeletedNotice } from "@/components/DeletedNotice";
 import { Disclaimer } from "@/components/Disclaimer";
 
 export default function Top() {
   return (
     <main className="main narrow">
+      <DeletedNotice />
       <h1>saigai-timeline</h1>
       <p className="lead">自宅・実家・学校など、登録した場所の周りで起きている災害の情報を、1本のタイムラインで確認できます。</p>
       <ul className="features">
-        <li>気象庁の警報・注意報と地震の情報を、地点ごとにまとめて表示します</li>
+        <li>気象庁の警報・注意報、土砂災害警戒情報、地震・津波の情報を、地点ごとにまとめて表示します</li>
         <li>災害の種類ごとに、表示と通知のレベルを選べます</li>
         <li>警報以上になったときや解除されたときに、メールで通知します</li>
       </ul>

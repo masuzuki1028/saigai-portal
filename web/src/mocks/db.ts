@@ -9,6 +9,7 @@ export const db = {
   timelines: new Map<string, TimelineItem[]>(),
   emailEnabled: true,
   testNotifications: 0,
+  deleted: false,
 };
 
 export function loadScenario(name: ScenarioName) {
@@ -18,6 +19,7 @@ export function loadScenario(name: ScenarioName) {
   db.timelines = new Map(Object.entries(sc.timelines).map(([k, v]) => [k, structuredClone(v)]));
   db.emailEnabled = true;
   db.testNotifications = 0;
+  db.deleted = false;
 }
 
 let seq = 0;

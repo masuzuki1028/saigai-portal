@@ -8,6 +8,8 @@ type EventKind string
 const (
 	EventWarning    EventKind = "warning"    // 気象警報・注意報
 	EventEarthquake EventKind = "earthquake" // 震源・震度に関する情報
+	EventLandslide  EventKind = "landslide"  // 土砂災害警戒情報（Warnings に入れる）
+	EventTsunami    EventKind = "tsunami"    // 津波警報・注意報・予報
 )
 
 // Event は気象庁などの公式情報を正規化したもの（docs/04_data_model.md 5.3）。
@@ -21,8 +23,26 @@ type Event struct {
 	IssuedAt  time.Time // 発表時刻（ReportDateTime）
 	ReportURL string    // 電文の URL
 
-	Warnings []AreaWarning // Kind=warning のとき
+	Warnings []AreaWarning // Kind=warning / landslide のとき
 	Quake    *Quake        // Kind=earthquake のとき
+	Tsunami  *TsunamiInfo  // Kind=tsunami のとき
+}
+
+// TsunamiInfo は津波予報区ごとの津波警報・注意報・予報。電文に含まれない予報区は変化なしとして扱う。
+type TsunamiInfo struct {
+	EventID string
+	Areas   []TsunamiArea
+}
+
+// TsunamiArea は1つの津波予報区の情報。
+type TsunamiArea struct {
+	Code        string // 津波予報区コード（例: 340）
+	Name        string
+	KindCode    string // 例: 51 = 津波警報
+	KindName    string
+	Severity    Severity
+	ArrivalTime string // 到達予想時刻・状況（表示用）
+	MaxHeight   string // 予想される高さ（表示用。例: 3m、巨大）
 }
 
 // AreaWarning は1つの区域（市町村等）に対する警報・注意報の状態。

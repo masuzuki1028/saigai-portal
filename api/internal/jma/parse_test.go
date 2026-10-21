@@ -29,7 +29,8 @@ func TestParseGolden(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			ev, err := Parse(data, "https://www.data.jma.go.jp/developer/xml/data/"+name+".xml")
+			// sample_* は気象庁のサンプル電文（Status が訓練のものを含む）
+			ev, err := parse(data, "https://www.data.jma.go.jp/developer/xml/data/"+name+".xml", strings.HasPrefix(name, "sample_"))
 			if err != nil {
 				t.Fatalf("Parse: %v", err)
 			}
@@ -124,7 +125,7 @@ func TestParseFeed(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 	entries, err := ParseFeed(f)
 	if err != nil {
 		t.Fatal(err)

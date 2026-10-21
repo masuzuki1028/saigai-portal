@@ -69,7 +69,7 @@ func poll(ctx context.Context, app *localenv.App, log *slog.Logger) {
 		select {
 		case <-ctx.Done():
 			return
-		case <-time.After(60*time.Second + time.Duration(rand.IntN(5000))*time.Millisecond):
+		case <-time.After(60*time.Second + time.Duration(rand.IntN(5000))*time.Millisecond): //nolint:gosec // 取得の間隔のばらつき（セキュリティ用途ではない）
 		}
 	}
 }

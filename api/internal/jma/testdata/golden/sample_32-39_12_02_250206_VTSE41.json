@@ -1,0 +1,611 @@
+{
+  "ID": "596e8ff8bd7a592acfcb90fa9374b11163240ac52ffab4b66b7d60a19ade0be0",
+  "Source": "jma_xml",
+  "Kind": "tsunami",
+  "Title": "大津波警報・津波警報・津波注意報",
+  "Headline": "＊＊＊これは訓練です＊＊＊\n東日本大震災クラスの津波が来襲します。\n大津波警報・津波警報を発表しました。\nただちに避難してください。",
+  "InfoType": "発表",
+  "IssuedAt": "2016-09-01T07:13:00+09:00",
+  "ReportURL": "https://www.data.jma.go.jp/developer/xml/data/sample_32-39_12_02_250206_VTSE41.xml",
+  "Warnings": null,
+  "Quake": null,
+  "Tsunami": {
+    "EventID": "20160901071000",
+    "Areas": [
+      {
+        "Code": "300",
+        "Name": "茨城県",
+        "KindCode": "53",
+        "KindName": "大津波警報",
+        "Severity": 4,
+        "ArrivalTime": "08時10分ころ到達予想",
+        "MaxHeight": "巨大"
+      },
+      {
+        "Code": "310",
+        "Name": "千葉県九十九里・外房",
+        "KindCode": "53",
+        "KindName": "大津波警報",
+        "Severity": 4,
+        "ArrivalTime": "07時30分ころ到達予想",
+        "MaxHeight": "巨大"
+      },
+      {
+        "Code": "311",
+        "Name": "千葉県内房",
+        "KindCode": "53",
+        "KindName": "大津波警報",
+        "Severity": 4,
+        "ArrivalTime": "07時30分ころ到達予想",
+        "MaxHeight": "巨大"
+      },
+      {
+        "Code": "320",
+        "Name": "伊豆諸島",
+        "KindCode": "53",
+        "KindName": "大津波警報",
+        "Severity": 4,
+        "ArrivalTime": "津波到達中と推測",
+        "MaxHeight": "巨大"
+      },
+      {
+        "Code": "321",
+        "Name": "小笠原諸島",
+        "KindCode": "53",
+        "KindName": "大津波警報",
+        "Severity": 4,
+        "ArrivalTime": "08時20分ころ到達予想",
+        "MaxHeight": "巨大"
+      },
+      {
+        "Code": "330",
+        "Name": "相模湾・三浦半島",
+        "KindCode": "53",
+        "KindName": "大津波警報",
+        "Severity": 4,
+        "ArrivalTime": "07時30分ころ到達予想",
+        "MaxHeight": "巨大"
+      },
+      {
+        "Code": "380",
+        "Name": "静岡県",
+        "KindCode": "53",
+        "KindName": "大津波警報",
+        "Severity": 4,
+        "ArrivalTime": "津波到達中と推測",
+        "MaxHeight": "巨大"
+      },
+      {
+        "Code": "390",
+        "Name": "愛知県外海",
+        "KindCode": "53",
+        "KindName": "大津波警報",
+        "Severity": 4,
+        "ArrivalTime": "津波到達中と推測",
+        "MaxHeight": "巨大"
+      },
+      {
+        "Code": "391",
+        "Name": "伊勢・三河湾",
+        "KindCode": "53",
+        "KindName": "大津波警報",
+        "Severity": 4,
+        "ArrivalTime": "津波到達中と推測",
+        "MaxHeight": "巨大"
+      },
+      {
+        "Code": "400",
+        "Name": "三重県南部",
+        "KindCode": "53",
+        "KindName": "大津波警報",
+        "Severity": 4,
+        "ArrivalTime": "津波到達中と推測",
+        "MaxHeight": "巨大"
+      },
+      {
+        "Code": "510",
+        "Name": "大阪府",
+        "KindCode": "53",
+        "KindName": "大津波警報",
+        "Severity": 4,
+        "ArrivalTime": "07時30分ころ到達予想",
+        "MaxHeight": "巨大"
+      },
+      {
+        "Code": "521",
+        "Name": "兵庫県瀬戸内海沿岸",
+        "KindCode": "53",
+        "KindName": "大津波警報",
+        "Severity": 4,
+        "ArrivalTime": "07時30分ころ到達予想",
+        "MaxHeight": "巨大"
+      },
+      {
+        "Code": "522",
+        "Name": "淡路島南部",
+        "KindCode": "53",
+        "KindName": "大津波警報",
+        "Severity": 4,
+        "ArrivalTime": "津波到達中と推測",
+        "MaxHeight": "巨大"
+      },
+      {
+        "Code": "530",
+        "Name": "和歌山県",
+        "KindCode": "53",
+        "KindName": "大津波警報",
+        "Severity": 4,
+        "ArrivalTime": "津波到達中と推測",
+        "MaxHeight": "巨大"
+      },
+      {
+        "Code": "580",
+        "Name": "徳島県",
+        "KindCode": "53",
+        "KindName": "大津波警報",
+        "Severity": 4,
+        "ArrivalTime": "津波到達中と推測",
+        "MaxHeight": "巨大"
+      },
+      {
+        "Code": "590",
+        "Name": "香川県",
+        "KindCode": "53",
+        "KindName": "大津波警報",
+        "Severity": 4,
+        "ArrivalTime": "07時20分ころ到達予想",
+        "MaxHeight": "巨大"
+      },
+      {
+        "Code": "600",
+        "Name": "愛媛県宇和海沿岸",
+        "KindCode": "53",
+        "KindName": "大津波警報",
+        "Severity": 4,
+        "ArrivalTime": "津波到達中と推測",
+        "MaxHeight": "巨大"
+      },
+      {
+        "Code": "601",
+        "Name": "愛媛県瀬戸内海沿岸",
+        "KindCode": "53",
+        "KindName": "大津波警報",
+        "Severity": 4,
+        "ArrivalTime": "津波到達中と推測",
+        "MaxHeight": "巨大"
+      },
+      {
+        "Code": "610",
+        "Name": "高知県",
+        "KindCode": "53",
+        "KindName": "大津波警報",
+        "Severity": 4,
+        "ArrivalTime": "津波到達中と推測",
+        "MaxHeight": "巨大"
+      },
+      {
+        "Code": "701",
+        "Name": "山口県瀬戸内海沿岸",
+        "KindCode": "53",
+        "KindName": "大津波警報",
+        "Severity": 4,
+        "ArrivalTime": "07時40分ころ到達予想",
+        "MaxHeight": "巨大"
+      },
+      {
+        "Code": "750",
+        "Name": "大分県瀬戸内海沿岸",
+        "KindCode": "53",
+        "KindName": "大津波警報",
+        "Severity": 4,
+        "ArrivalTime": "07時20分ころ到達予想",
+        "MaxHeight": "巨大"
+      },
+      {
+        "Code": "751",
+        "Name": "大分県豊後水道沿岸",
+        "KindCode": "53",
+        "KindName": "大津波警報",
+        "Severity": 4,
+        "ArrivalTime": "津波到達中と推測",
+        "MaxHeight": "巨大"
+      },
+      {
+        "Code": "760",
+        "Name": "宮崎県",
+        "KindCode": "53",
+        "KindName": "大津波警報",
+        "Severity": 4,
+        "ArrivalTime": "津波到達中と推測",
+        "MaxHeight": "巨大"
+      },
+      {
+        "Code": "770",
+        "Name": "鹿児島県東部",
+        "KindCode": "53",
+        "KindName": "大津波警報",
+        "Severity": 4,
+        "ArrivalTime": "07時30分ころ到達予想",
+        "MaxHeight": "巨大"
+      },
+      {
+        "Code": "771",
+        "Name": "種子島・屋久島地方",
+        "KindCode": "53",
+        "KindName": "大津波警報",
+        "Severity": 4,
+        "ArrivalTime": "07時30分ころ到達予想",
+        "MaxHeight": "巨大"
+      },
+      {
+        "Code": "772",
+        "Name": "奄美群島・トカラ列島",
+        "KindCode": "53",
+        "KindName": "大津波警報",
+        "Severity": 4,
+        "ArrivalTime": "07時40分ころ到達予想",
+        "MaxHeight": "巨大"
+      },
+      {
+        "Code": "773",
+        "Name": "鹿児島県西部",
+        "KindCode": "53",
+        "KindName": "大津波警報",
+        "Severity": 4,
+        "ArrivalTime": "08時00分ころ到達予想",
+        "MaxHeight": "巨大"
+      },
+      {
+        "Code": "800",
+        "Name": "沖縄本島地方",
+        "KindCode": "53",
+        "KindName": "大津波警報",
+        "Severity": 4,
+        "ArrivalTime": "08時00分ころ到達予想",
+        "MaxHeight": "巨大"
+      },
+      {
+        "Code": "801",
+        "Name": "大東島地方",
+        "KindCode": "53",
+        "KindName": "大津波警報",
+        "Severity": 4,
+        "ArrivalTime": "07時50分ころ到達予想",
+        "MaxHeight": "巨大"
+      },
+      {
+        "Code": "100",
+        "Name": "北海道太平洋沿岸東部",
+        "KindCode": "51",
+        "KindName": "津波警報",
+        "Severity": 3,
+        "ArrivalTime": "09時00分ころ到達予想",
+        "MaxHeight": "高い"
+      },
+      {
+        "Code": "101",
+        "Name": "北海道太平洋沿岸中部",
+        "KindCode": "51",
+        "KindName": "津波警報",
+        "Severity": 3,
+        "ArrivalTime": "09時00分ころ到達予想",
+        "MaxHeight": "高い"
+      },
+      {
+        "Code": "102",
+        "Name": "北海道太平洋沿岸西部",
+        "KindCode": "51",
+        "KindName": "津波警報",
+        "Severity": 3,
+        "ArrivalTime": "09時10分ころ到達予想",
+        "MaxHeight": "高い"
+      },
+      {
+        "Code": "201",
+        "Name": "青森県太平洋沿岸",
+        "KindCode": "51",
+        "KindName": "津波警報",
+        "Severity": 3,
+        "ArrivalTime": "09時00分ころ到達予想",
+        "MaxHeight": "高い"
+      },
+      {
+        "Code": "210",
+        "Name": "岩手県",
+        "KindCode": "51",
+        "KindName": "津波警報",
+        "Severity": 3,
+        "ArrivalTime": "08時40分ころ到達予想",
+        "MaxHeight": "高い"
+      },
+      {
+        "Code": "220",
+        "Name": "宮城県",
+        "KindCode": "51",
+        "KindName": "津波警報",
+        "Severity": 3,
+        "ArrivalTime": "08時30分ころ到達予想",
+        "MaxHeight": "高い"
+      },
+      {
+        "Code": "250",
+        "Name": "福島県",
+        "KindCode": "51",
+        "KindName": "津波警報",
+        "Severity": 3,
+        "ArrivalTime": "08時20分ころ到達予想",
+        "MaxHeight": "高い"
+      },
+      {
+        "Code": "312",
+        "Name": "東京湾内湾",
+        "KindCode": "51",
+        "KindName": "津波警報",
+        "Severity": 3,
+        "ArrivalTime": "07時50分ころ到達予想",
+        "MaxHeight": "高い"
+      },
+      {
+        "Code": "560",
+        "Name": "岡山県",
+        "KindCode": "51",
+        "KindName": "津波警報",
+        "Severity": 3,
+        "ArrivalTime": "07時40分ころ到達予想",
+        "MaxHeight": "高い"
+      },
+      {
+        "Code": "570",
+        "Name": "広島県",
+        "KindCode": "51",
+        "KindName": "津波警報",
+        "Severity": 3,
+        "ArrivalTime": "07時50分ころ到達予想",
+        "MaxHeight": "高い"
+      },
+      {
+        "Code": "710",
+        "Name": "福岡県瀬戸内海沿岸",
+        "KindCode": "51",
+        "KindName": "津波警報",
+        "Severity": 3,
+        "ArrivalTime": "08時50分ころ到達予想",
+        "MaxHeight": "高い"
+      },
+      {
+        "Code": "712",
+        "Name": "有明・八代海",
+        "KindCode": "51",
+        "KindName": "津波警報",
+        "Severity": 3,
+        "ArrivalTime": "09時00分ころ到達予想",
+        "MaxHeight": "高い"
+      },
+      {
+        "Code": "730",
+        "Name": "長崎県西方",
+        "KindCode": "51",
+        "KindName": "津波警報",
+        "Severity": 3,
+        "ArrivalTime": "08時50分ころ到達予想",
+        "MaxHeight": "高い"
+      },
+      {
+        "Code": "740",
+        "Name": "熊本県天草灘沿岸",
+        "KindCode": "51",
+        "KindName": "津波警報",
+        "Severity": 3,
+        "ArrivalTime": "08時50分ころ到達予想",
+        "MaxHeight": "高い"
+      },
+      {
+        "Code": "802",
+        "Name": "宮古島・八重山地方",
+        "KindCode": "51",
+        "KindName": "津波警報",
+        "Severity": 3,
+        "ArrivalTime": "08時40分ころ到達予想",
+        "MaxHeight": "高い"
+      },
+      {
+        "Code": "110",
+        "Name": "北海道日本海沿岸北部",
+        "KindCode": "62",
+        "KindName": "津波注意報",
+        "Severity": 2,
+        "ArrivalTime": "10時40分ころ到達予想",
+        "MaxHeight": ""
+      },
+      {
+        "Code": "111",
+        "Name": "北海道日本海沿岸南部",
+        "KindCode": "62",
+        "KindName": "津波注意報",
+        "Severity": 2,
+        "ArrivalTime": "09時50分ころ到達予想",
+        "MaxHeight": ""
+      },
+      {
+        "Code": "120",
+        "Name": "オホーツク海沿岸",
+        "KindCode": "62",
+        "KindName": "津波注意報",
+        "Severity": 2,
+        "ArrivalTime": "10時10分ころ到達予想",
+        "MaxHeight": ""
+      },
+      {
+        "Code": "200",
+        "Name": "青森県日本海沿岸",
+        "KindCode": "62",
+        "KindName": "津波注意報",
+        "Severity": 2,
+        "ArrivalTime": "09時30分ころ到達予想",
+        "MaxHeight": ""
+      },
+      {
+        "Code": "202",
+        "Name": "陸奥湾",
+        "KindCode": "62",
+        "KindName": "津波注意報",
+        "Severity": 2,
+        "ArrivalTime": "10時00分ころ到達予想",
+        "MaxHeight": ""
+      },
+      {
+        "Code": "230",
+        "Name": "秋田県",
+        "KindCode": "62",
+        "KindName": "津波注意報",
+        "Severity": 2,
+        "ArrivalTime": "10時20分ころ到達予想",
+        "MaxHeight": ""
+      },
+      {
+        "Code": "240",
+        "Name": "山形県",
+        "KindCode": "62",
+        "KindName": "津波注意報",
+        "Severity": 2,
+        "ArrivalTime": "10時30分ころ到達予想",
+        "MaxHeight": ""
+      },
+      {
+        "Code": "340",
+        "Name": "新潟県上中下越",
+        "KindCode": "62",
+        "KindName": "津波注意報",
+        "Severity": 2,
+        "ArrivalTime": "10時50分ころ到達予想",
+        "MaxHeight": ""
+      },
+      {
+        "Code": "341",
+        "Name": "佐渡",
+        "KindCode": "62",
+        "KindName": "津波注意報",
+        "Severity": 2,
+        "ArrivalTime": "10時50分ころ到達予想",
+        "MaxHeight": ""
+      },
+      {
+        "Code": "350",
+        "Name": "富山県",
+        "KindCode": "62",
+        "KindName": "津波注意報",
+        "Severity": 2,
+        "ArrivalTime": "11時00分ころ到達予想",
+        "MaxHeight": ""
+      },
+      {
+        "Code": "360",
+        "Name": "石川県能登",
+        "KindCode": "62",
+        "KindName": "津波注意報",
+        "Severity": 2,
+        "ArrivalTime": "11時00分ころ到達予想",
+        "MaxHeight": ""
+      },
+      {
+        "Code": "361",
+        "Name": "石川県加賀",
+        "KindCode": "62",
+        "KindName": "津波注意報",
+        "Severity": 2,
+        "ArrivalTime": "11時20分ころ到達予想",
+        "MaxHeight": ""
+      },
+      {
+        "Code": "370",
+        "Name": "福井県",
+        "KindCode": "62",
+        "KindName": "津波注意報",
+        "Severity": 2,
+        "ArrivalTime": "11時30分ころ到達予想",
+        "MaxHeight": ""
+      },
+      {
+        "Code": "500",
+        "Name": "京都府",
+        "KindCode": "62",
+        "KindName": "津波注意報",
+        "Severity": 2,
+        "ArrivalTime": "11時40分ころ到達予想",
+        "MaxHeight": ""
+      },
+      {
+        "Code": "520",
+        "Name": "兵庫県北部",
+        "KindCode": "62",
+        "KindName": "津波注意報",
+        "Severity": 2,
+        "ArrivalTime": "11時40分ころ到達予想",
+        "MaxHeight": ""
+      },
+      {
+        "Code": "540",
+        "Name": "鳥取県",
+        "KindCode": "62",
+        "KindName": "津波注意報",
+        "Severity": 2,
+        "ArrivalTime": "11時40分ころ到達予想",
+        "MaxHeight": ""
+      },
+      {
+        "Code": "550",
+        "Name": "島根県出雲・石見",
+        "KindCode": "62",
+        "KindName": "津波注意報",
+        "Severity": 2,
+        "ArrivalTime": "11時20分ころ到達予想",
+        "MaxHeight": ""
+      },
+      {
+        "Code": "551",
+        "Name": "隠岐",
+        "KindCode": "62",
+        "KindName": "津波注意報",
+        "Severity": 2,
+        "ArrivalTime": "11時30分ころ到達予想",
+        "MaxHeight": ""
+      },
+      {
+        "Code": "700",
+        "Name": "山口県日本海沿岸",
+        "KindCode": "62",
+        "KindName": "津波注意報",
+        "Severity": 2,
+        "ArrivalTime": "10時00分ころ到達予想",
+        "MaxHeight": ""
+      },
+      {
+        "Code": "711",
+        "Name": "福岡県日本海沿岸",
+        "KindCode": "62",
+        "KindName": "津波注意報",
+        "Severity": 2,
+        "ArrivalTime": "10時00分ころ到達予想",
+        "MaxHeight": ""
+      },
+      {
+        "Code": "720",
+        "Name": "佐賀県北部",
+        "KindCode": "62",
+        "KindName": "津波注意報",
+        "Severity": 2,
+        "ArrivalTime": "10時20分ころ到達予想",
+        "MaxHeight": ""
+      },
+      {
+        "Code": "731",
+        "Name": "壱岐・対馬",
+        "KindCode": "62",
+        "KindName": "津波注意報",
+        "Severity": 2,
+        "ArrivalTime": "10時10分ころ到達予想",
+        "MaxHeight": ""
+      }
+    ]
+  }
+}

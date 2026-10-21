@@ -77,7 +77,7 @@ func call(t *testing.T, srv *httptest.Server, method, path, token string, body a
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer res.Body.Close()
+	defer func() { _ = res.Body.Close() }()
 	resBody, _ := io.ReadAll(res.Body)
 	validateResponse(t, method, path, raw, res, resBody)
 	return res.StatusCode, resBody
@@ -85,7 +85,7 @@ func call(t *testing.T, srv *httptest.Server, method, path, token string, body a
 
 func validateResponse(t *testing.T, method, path string, reqBody []byte, res *http.Response, body []byte) {
 	t.Helper()
-	spec, err := apigen.GetSwagger()
+	spec, err := apigen.GetSpec()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -249,12 +249,33 @@ func allCases(locID string, upd any) []authzCase {
 		{http.MethodPut, "/api/locations/" + locID, upd},
 		{http.MethodDelete, "/api/locations/" + locID, nil},
 		{http.MethodGet, "/api/locations/" + locID + "/timeline", nil},
+		{http.MethodPost, "/api/me/delete", map[string]any{"confirm": "delete"}},
+	}
+}
+
+func TestDeleteAccount(t *testing.T) {
+	srv, _ := newServer(t)
+	alice := createLocation(t, srv, "alice")
+	bob := createLocation(t, srv, "bob")
+	if code, _ := call(t, srv, http.MethodPost, "/api/me/delete", "alice", map[string]any{"confirm": "yes"}); code != http.StatusBadRequest {
+		t.Errorf("確認の文字列が違うのに削除できた: %d", code)
+	}
+	if code, body := call(t, srv, http.MethodPost, "/api/me/delete", "alice", map[string]any{"confirm": "delete"}); code != http.StatusNoContent {
+		t.Fatalf("退会: %d %s", code, body)
+	}
+	// 同じ sub でログインし直すと、新しい利用者として扱われ、以前の地点は見えない
+	if _, body := call(t, srv, http.MethodGet, "/api/locations", "alice", nil); strings.Contains(string(body), alice.Id) {
+		t.Errorf("退会後も地点が残っている: %s", body)
+	}
+	// 他人のデータは消えない
+	if code, _ := call(t, srv, http.MethodGet, "/api/locations/"+bob.Id, "bob", nil); code != http.StatusOK {
+		t.Errorf("bob の地点が消えた: %d", code)
 	}
 }
 
 // TestAuthzCoversAllOperations は、OpenAPI の全操作（認証不要のものを除く）が allCases に含まれていることを確認する。
 func TestAuthzCoversAllOperations(t *testing.T) {
-	spec, err := apigen.GetSwagger()
+	spec, err := apigen.GetSpec()
 	if err != nil {
 		t.Fatal(err)
 	}

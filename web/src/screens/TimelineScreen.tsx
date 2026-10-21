@@ -42,7 +42,10 @@ export function TimelineScreen({ id }: { id: string }) {
       {loc && (
         <>
           <div className="toolbar">
-            <span className="muted">{loc.areaName}</span>
+            <span className="muted">
+              {loc.areaName}
+              {loc.tsunamiAreaName && `・津波予報区: ${loc.tsunamiAreaName}`}
+            </span>
             <Link href={`/app/map?id=${loc.id}`}>地図</Link>
             <Link href={`/app/location/edit?id=${loc.id}`}>編集</Link>
           </div>

@@ -27,6 +27,8 @@ type Location struct {
 	WarnKey        string                `dynamodbav:"warnKey"`
 	QuakeKey       string                `dynamodbav:"quakeKey"`
 	IsCoastal      bool                  `dynamodbav:"isCoastal"`
+	TsunamiKey     string                `dynamodbav:"tsunamiKey,omitempty"`  // 津波予報区コード（沿岸の地点のみ）
+	TsunamiName    string                `dynamodbav:"tsunamiName,omitempty"` // 津波予報区の名前
 	HazardSettings domain.HazardSettings `dynamodbav:"hazardSettings"`
 	Version        int                   `dynamodbav:"version"`
 	CreatedAt      time.Time             `dynamodbav:"createdAt"`
@@ -40,8 +42,9 @@ func locSK(id string) string { return "LOC#" + id }
 type AreaKind string
 
 const (
-	AreaWarn  AreaKind = "warn"
-	AreaQuake AreaKind = "quake"
+	AreaWarn    AreaKind = "warn"
+	AreaQuake   AreaKind = "quake"
+	AreaTsunami AreaKind = "tsunami"
 )
 
 func areaPK(kind AreaKind, code string) string { return "AREA#" + string(kind) + "#" + code }
@@ -56,8 +59,13 @@ type AreaEntry struct {
 	WrittenBy      string                `dynamodbav:"writtenBy"`
 }
 
+// areaEntries は地点の逆引きのキー。津波予報区は沿岸の地点だけ。
 func (l Location) areaEntries() map[AreaKind]string {
-	return map[AreaKind]string{AreaWarn: l.WarnKey, AreaQuake: l.QuakeKey}
+	m := map[AreaKind]string{AreaWarn: l.WarnKey, AreaQuake: l.QuakeKey}
+	if l.TsunamiKey != "" {
+		m[AreaTsunami] = l.TsunamiKey
+	}
+	return m
 }
 
 func (s *Store) areaPut(l Location) ([]types.TransactWriteItem, error) {
@@ -195,7 +203,7 @@ func (s *Store) UpdateLocation(ctx context.Context, old, l Location) error {
 	return err
 }
 
-// DeleteLocation は地点と逆引きインデックスを消す。タイムラインは TTL で消える。
+// DeleteLocation は地点と逆引きインデックスを消す。タイムラインは DeleteTimeline で消す。
 func (s *Store) DeleteLocation(ctx context.Context, l Location) error {
 	tx := append([]types.TransactWriteItem{{Delete: &types.Delete{
 		TableName:           &s.Tables.App,

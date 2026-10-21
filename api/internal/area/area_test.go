@@ -44,9 +44,9 @@ func TestGSIResolver(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Query().Get("lat") {
 		case "37.446200":
-			w.Write([]byte(`{"results":{"muniCd":"15202","lv01Nm":"城内町一丁目"}}`))
+			_, _ = w.Write([]byte(`{"results":{"muniCd":"15202","lv01Nm":"城内町一丁目"}}`))
 		case "30.000000":
-			w.Write([]byte(`{}`)) // 海上
+			_, _ = w.Write([]byte(`{}`)) // 海上
 		default:
 			w.WriteHeader(http.StatusInternalServerError)
 		}
@@ -74,5 +74,27 @@ func TestStaticResolver(t *testing.T) {
 	}
 	if _, err := s.Resolve(context.Background(), 26.2, 127.7); !errors.Is(err, ErrNotFound) {
 		t.Errorf("遠い地点: err = %v", err)
+	}
+}
+
+func TestNearestTsunamiZone(t *testing.T) {
+	tests := []struct {
+		name     string
+		lat, lon float64
+		coastal  bool
+		zone     string
+	}{
+		{"新潟市中央区（海沿い）", 37.9161, 139.0364, true, "新潟県上中下越"},
+		{"長岡市の中心部（内陸）", 37.4462, 138.8512, false, ""},
+		{"鎌倉駅（海沿い）", 35.3192, 139.5467, true, "相模湾・三浦半島"},
+		{"宮古市（海沿い）", 39.6414, 141.9570, true, "岩手県"},
+		{"東京都千代田区（東京湾から約 3km）", 35.6812, 139.7671, true, "東京湾内湾"},
+		{"長野市（内陸）", 36.6485, 138.1949, false, ""},
+	}
+	for _, tt := range tests {
+		z, d, ok := NearestTsunamiZone(tt.lat, tt.lon)
+		if ok != tt.coastal || z.Name != tt.zone {
+			t.Errorf("%s: zone=%+v dist=%.1fkm coastal=%v", tt.name, z, d, ok)
+		}
 	}
 }

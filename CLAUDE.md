@@ -102,6 +102,7 @@ docker compose up -d
 
 # api（api/ で実行）
 go vet ./... && go test -race -cover ./... && go run golang.org/x/vuln/cmd/govulncheck@v1.1.4 ./...
+go run github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.14.0 run ./...   # gosec を含む（設定は .golangci.yml）
 go test -tags=integration ./...                  # 結合・認可・シナリオのテスト（DynamoDB Local が必要）
 go test ./internal/jma -update                   # 電文パーサのゴールデンファイルを更新
 go test -tags=integration ./internal/scenario -update   # シナリオの結果のゴールデンファイルを更新
@@ -111,7 +112,7 @@ go run -tags local ./cmd/local -ingest           # 気象庁のフィードを1�
 go run -tags local ./cmd/replay -list            # 災害シナリオの一覧
 go run -tags local ./cmd/replay <シナリオ名>     # 災害シナリオの再現（-reset でローカルのデータを作り直す）
 GEOCODER=static go run -tags local ./cmd/local   # 国土地理院の逆ジオコーダを呼ばずに動かす
-# golangci-lint・opsctl は未導入（AWS への構築時に追加）
+# opsctl は未導入（AWS への構築時に追加）
 
 # web（web/ で実行。Node は .nvmrc のバージョン）
 npm ci --ignore-scripts
@@ -121,6 +122,9 @@ npm run dev:mock                     # MSW でモックした API で開発（?s
 npm run dev:local                    # ローカル API サーバー（cmd/local）につないで開発
 npx playwright install chromium webkit   # 初回のみ
 npm run e2e                          # E2E（モック API。build:mock した静的出力を配信してテスト）
+
+# CI（.github/workflows）
+go run github.com/rhysd/actionlint/cmd/actionlint@v1.7.7   # ワークフローの検査（リポジトリのルートで実行）
 
 # infra
 terraform fmt -check -recursive infra && tflint --recursive --chdir=infra

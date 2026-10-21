@@ -21,7 +21,7 @@ type Area struct {
 	WarnKey string
 	// QuakeKey は地震情報（市町村ごとの震度）の突き合わせキー。政令指定都市は区の単位
 	QuakeKey string
-	// IsCoastal は沿岸の地点か（津波の設定を出すかどうか）。MVP では判定しない（docs/01 10章の未決事項）
+	// IsCoastal は沿岸の地点か（津波の設定を出すかどうか）。座標から NearestTsunamiZone で判定する
 	IsCoastal bool
 }
 

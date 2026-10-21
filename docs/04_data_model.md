@@ -137,6 +137,8 @@ erDiagram
 - `kind` は `warn`（警報区域=市町村等）, `quake`（地震情報の市町村）, `tsunami`（津波予報区）
   - `<code>` は5桁の市区町村コード（気象庁の7桁の市町村等コードの先頭5桁）。富山市の「平地」「山間部」のような市町村の中の区域は、市町村の単位にまとめる（実際より広めに届く方向の誤差。Phase 2 で精度を改善する）
   - 政令指定都市は、`warn` は市のコード（警報・注意報は市の単位で発表される）、`quake` は区のコードにする（震度は区の単位で発表される）
+  - `tsunami` は津波予報区のコード（3桁）。沿岸の地点だけ登録する。海岸線は約 2km 四方のセルにして同梱している（`api/internal/area/tsunami.json`、`gentsunami` で生成）
+- 地点・種別ごとの現在の状態（`timeline` テーブルの `S#<stateKey>`）でレベルの変化を判定する。土砂災害警戒情報は、大雨警報（土砂災害）と同じ種別でも別の状態（`landslide:alert`）として持ち、互いの電文で上書きしない
 - AreaIndex に設定値のコピーを持たせることで、**突き合わせ時に Location 本体を読まずに判定できる**（読み取り回数＝コスト削減）。Location 更新時に同時更新する（TransactWriteItems）
 
 ### 5.2 Location の属性
@@ -157,7 +159,9 @@ erDiagram
     "quake": "1310100",               // 地震情報の市町村コード
     "tsunami": null                   // 沿岸地点のみ津波予報区コード
   },
-  "isCoastal": false,
+  "isCoastal": false,                 // 海岸線から約 5km 以内か（気象庁の津波予報区の GIS データから判定）
+  "tsunamiKey": null,                 // 沿岸の地点のみ: 一番近い津波予報区のコード（例: "340"）
+  "tsunamiName": null,                // 津波予報区の名前（例: "新潟県上中下越"）
   "hazardSettings": {
     "rain":       { "display": 2, "notify": 3 },
     "flood":      { "display": 2, "notify": 3 },

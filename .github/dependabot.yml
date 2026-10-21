@@ -1,0 +1,27 @@
+# 依存の自動更新（docs/07_security.md 4.2）。
+# 公開直後の悪意あるバージョンを避けるため、cooldown で公開から14日経ってから更新の PR を作る（セキュリティ修正は除く）
+version: 2
+updates:
+  - package-ecosystem: gomod
+    directory: /api
+    schedule: { interval: weekly, day: monday, timezone: Asia/Tokyo }
+    cooldown: { default-days: 14 }
+    groups:
+      aws-sdk: { patterns: ["github.com/aws/*"] }
+  - package-ecosystem: npm
+    directory: /web
+    schedule: { interval: weekly, day: monday, timezone: Asia/Tokyo }
+    cooldown: { default-days: 14 }
+    groups:
+      testing:
+        patterns: ["vitest", "@vitest/*", "@testing-library/*", "@playwright/test", "playwright-core", "@axe-core/playwright", "jsdom", "msw"]
+      lint:
+        patterns: ["eslint", "eslint-*", "@eslint/*", "typescript-eslint"]
+  - package-ecosystem: github-actions
+    directory: /
+    schedule: { interval: weekly, day: monday, timezone: Asia/Tokyo }
+    cooldown: { default-days: 14 }
+  - package-ecosystem: docker-compose
+    directory: /
+    schedule: { interval: weekly, day: monday, timezone: Asia/Tokyo }
+    cooldown: { default-days: 14 }

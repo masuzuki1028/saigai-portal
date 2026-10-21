@@ -60,7 +60,7 @@ func TestPollFetchesEachTelegramOnce(t *testing.T) {
 				return
 			}
 			w.Header().Set("Last-Modified", "Tue, 20 Oct 2026 08:00:00 GMT")
-			w.Write([]byte(strings.ReplaceAll(string(feed), "https://www.data.jma.go.jp/developer/xml", srv.URL)))
+			_, _ = w.Write([]byte(strings.ReplaceAll(string(feed), "https://www.data.jma.go.jp/developer/xml", srv.URL)))
 			return
 		}
 		name := strings.TrimPrefix(r.URL.Path, "/data/")
@@ -72,7 +72,7 @@ func TestPollFetchesEachTelegramOnce(t *testing.T) {
 			w.WriteHeader(http.StatusNotFound)
 			return
 		}
-		w.Write(b)
+		_, _ = w.Write(b)
 	}))
 	defer srv.Close()
 

@@ -42,6 +42,16 @@ export const handlers = [
     return new HttpResponse(null, { status: 202 });
   }),
 
+  http.post(api("/me/delete"), async ({ request }) => {
+    if (!authed(request)) return err(401, "unauthorized", "ログインが必要です");
+    const body = (await request.json()) as { confirm?: string };
+    if (body.confirm !== "delete") return err(400, "bad_request", "入力が正しくありません");
+    db.locations.clear();
+    db.timelines.clear();
+    db.deleted = true;
+    return new HttpResponse(null, { status: 204 });
+  }),
+
   http.get(api("/locations"), ({ request }) => {
     if (!authed(request)) return err(401, "unauthorized", "ログインが必要です");
     return HttpResponse.json({ items: [...db.locations.values()] });

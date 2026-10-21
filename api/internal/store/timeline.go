@@ -72,6 +72,9 @@ type cursor struct {
 // カーソルは前のページの最後のキー。別の地点のキーを含むカーソルは拒否する（他人のタイムラインを読ませない）。
 func (s *Store) QueryTimeline(ctx context.Context, locID string, limit int, after string) ([]TimelineItem, string, error) {
 	pk := timelinePK(locID)
+	if limit < 1 || limit > 100 {
+		limit = 30
+	}
 	in := &dynamodb.QueryInput{
 		TableName:              &s.Tables.Timeline,
 		KeyConditionExpression: aws.String("PK = :pk AND begins_with(SK, :sk)"),
@@ -80,7 +83,7 @@ func (s *Store) QueryTimeline(ctx context.Context, locID string, limit int, afte
 			":sk": &types.AttributeValueMemberS{Value: "T#"},
 		},
 		ScanIndexForward: aws.Bool(false),
-		Limit:            aws.Int32(int32(limit)),
+		Limit:            aws.Int32(int32(limit)), //nolint:gosec // 直前で 1〜100 に制限している
 	}
 	if after != "" {
 		raw, err := base64.RawURLEncoding.DecodeString(after)
@@ -266,3 +269,35 @@ func (s *Store) PutCursor(ctx context.Context, c IngestCursor) error {
 }
 
 func itoa(i int) string { return strconv.Itoa(i) }
+
+// DeleteTimeline は地点のタイムライン・状態をすべて削除する（地点の削除・退会のとき）。
+func (s *Store) DeleteTimeline(ctx context.Context, locID string) error {
+	p := dynamodb.NewQueryPaginator(s.DB, &dynamodb.QueryInput{
+		TableName:                 &s.Tables.Timeline,
+		KeyConditionExpression:    aws.String("PK = :pk"),
+		ExpressionAttributeValues: map[string]types.AttributeValue{":pk": &types.AttributeValueMemberS{Value: timelinePK(locID)}},
+		ProjectionExpression:      aws.String("PK, SK"),
+	})
+	for p.HasMorePages() {
+		page, err := p.NextPage(ctx)
+		if err != nil {
+			return err
+		}
+		for start := 0; start < len(page.Items); start += 25 {
+			end := min(start+25, len(page.Items))
+			reqs := make([]types.WriteRequest, 0, end-start)
+			for _, it := range page.Items[start:end] {
+				reqs = append(reqs, types.WriteRequest{DeleteRequest: &types.DeleteRequest{Key: it}})
+			}
+			in := map[string][]types.WriteRequest{s.Tables.Timeline: reqs}
+			for len(in) > 0 {
+				out, err := s.DB.BatchWriteItem(ctx, &dynamodb.BatchWriteItemInput{RequestItems: in})
+				if err != nil {
+					return err
+				}
+				in = out.UnprocessedItems
+			}
+		}
+	}
+	return nil
+}

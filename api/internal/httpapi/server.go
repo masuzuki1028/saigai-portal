@@ -40,7 +40,7 @@ var PlanLimits = map[string]int{"free": 3, "personal_plus": 10, "business": 500}
 
 // Handler は認証・入力の検証・ルーティングを組み合わせた http.Handler を返す。/api 配下で受ける。
 func (s *Server) Handler(v auth.Verifier) (http.Handler, error) {
-	spec, err := apigen.GetSwagger()
+	spec, err := apigen.GetSpec()
 	if err != nil {
 		return nil, err
 	}

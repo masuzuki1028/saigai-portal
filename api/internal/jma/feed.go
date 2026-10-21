@@ -52,4 +52,10 @@ func ParseFeed(r io.Reader) ([]FeedEntry, error) {
 }
 
 // Wanted は取り込む対象の電文か。
-func Wanted(title string) bool { return title == TitleWarning || title == TitleQuake }
+func Wanted(title string) bool {
+	switch title {
+	case TitleWarning, TitleLandslide, TitleQuake, TitleTsunami:
+		return true
+	}
+	return false
+}

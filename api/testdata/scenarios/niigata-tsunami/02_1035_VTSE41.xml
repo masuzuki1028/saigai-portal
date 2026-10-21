@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 災害シナリオ用に作成した電文（実在の発表ではない）。構造は津波警報・注意報・予報a（VTSE41）に合わせている -->
+<Report xmlns="http://xml.kishou.go.jp/jmaxml1/" xmlns:jmx="http://xml.kishou.go.jp/jmaxml1/">
+<Control>
+<Title>津波警報・注意報・予報a</Title>
+<DateTime>2026-09-01T01:35:00Z</DateTime>
+<Status>通常</Status>
+<EditorialOffice>気象庁本庁</EditorialOffice>
+<PublishingOffice>気象庁</PublishingOffice>
+</Control>
+<Head xmlns="http://xml.kishou.go.jp/jmaxml1/informationBasis1/">
+<Title>津波警報・津波注意報</Title>
+<ReportDateTime>2026-09-01T10:35:00+09:00</ReportDateTime>
+<TargetDateTime>2026-09-01T10:35:00+09:00</TargetDateTime>
+<EventID>20260901101000</EventID>
+<InfoType>発表</InfoType>
+<Serial></Serial>
+<InfoKind>津波警報・注意報・予報</InfoKind>
+<InfoKindVersion>1.0_1</InfoKindVersion>
+<Headline>
+<Text>新潟県上中下越に津波警報を発表しました。ただちに避難してください。</Text>
+</Headline>
+</Head>
+<Body xmlns="http://xml.kishou.go.jp/jmaxml1/body/seismology1/" xmlns:jmx_eb="http://xml.kishou.go.jp/jmaxml1/elementBasis1/">
+<Tsunami>
+<Forecast>
+<Item>
+<Area><Name>新潟県上中下越</Name><Code>340</Code></Area>
+<Category><Kind><Name>津波警報</Name><Code>51</Code></Kind></Category>
+<FirstHeight><ArrivalTime>2026-09-01T10:40:00+09:00</ArrivalTime></FirstHeight><MaxHeight><jmx_eb:TsunamiHeight type="津波の高さ" unit="m" description="3m">3</jmx_eb:TsunamiHeight></MaxHeight>
+</Item>
+<Item>
+<Area><Name>佐渡</Name><Code>342</Code></Area>
+<Category><Kind><Name>津波注意報</Name><Code>62</Code></Kind></Category>
+<FirstHeight><ArrivalTime>2026-09-01T10:30:00+09:00</ArrivalTime></FirstHeight><MaxHeight><jmx_eb:TsunamiHeight type="津波の高さ" unit="m" description="1m">1</jmx_eb:TsunamiHeight></MaxHeight>
+</Item>
+</Forecast>
+</Tsunami>
+</Body>
+</Report>
