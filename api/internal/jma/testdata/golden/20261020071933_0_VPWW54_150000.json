@@ -1,0 +1,532 @@
+{
+  "ID": "b2df0683172cd284bc396aac743c2f365b5c241ed45cd1c984ffc19d61dbfff3",
+  "Source": "jma_xml",
+  "Kind": "warning",
+  "Title": "新潟県気象警報・注意報",
+  "Headline": "中越、上越、佐渡では土砂災害に、佐渡では強風に、下越、佐渡では竜巻などの激しい突風や落雷に、上越では濃霧による視程障害に注意してください。",
+  "InfoType": "発表",
+  "IssuedAt": "2026-10-20T16:19:00+09:00",
+  "ReportURL": "https://www.data.jma.go.jp/developer/xml/data/20261020071933_0_VPWW54_150000.xml",
+  "Warnings": [
+    {
+      "AreaCode": "1510000",
+      "AreaName": "新潟市",
+      "Kinds": [
+        {
+          "Code": "14",
+          "Name": "雷注意報",
+          "Status": "解除",
+          "Notes": null,
+          "Hazard": "",
+          "Severity": 0,
+          "Active": false
+        }
+      ]
+    },
+    {
+      "AreaCode": "1520200",
+      "AreaName": "長岡市",
+      "Kinds": [
+        {
+          "Code": "10",
+          "Name": "大雨注意報",
+          "Status": "継続",
+          "Notes": [
+            "土砂災害注意"
+          ],
+          "Hazard": "rain",
+          "Severity": 2,
+          "Active": true
+        },
+        {
+          "Code": "14",
+          "Name": "雷注意報",
+          "Status": "解除",
+          "Notes": null,
+          "Hazard": "",
+          "Severity": 0,
+          "Active": false
+        }
+      ]
+    },
+    {
+      "AreaCode": "1520400",
+      "AreaName": "三条市",
+      "Kinds": [
+        {
+          "Code": "14",
+          "Name": "雷注意報",
+          "Status": "解除",
+          "Notes": null,
+          "Hazard": "",
+          "Severity": 0,
+          "Active": false
+        }
+      ]
+    },
+    {
+      "AreaCode": "1520500",
+      "AreaName": "柏崎市",
+      "Kinds": [
+        {
+          "Code": "14",
+          "Name": "雷注意報",
+          "Status": "解除",
+          "Notes": null,
+          "Hazard": "",
+          "Severity": 0,
+          "Active": false
+        }
+      ]
+    },
+    {
+      "AreaCode": "1520600",
+      "AreaName": "新発田市",
+      "Kinds": [
+        {
+          "Code": "14",
+          "Name": "雷注意報",
+          "Status": "解除",
+          "Notes": null,
+          "Hazard": "",
+          "Severity": 0,
+          "Active": false
+        }
+      ]
+    },
+    {
+      "AreaCode": "1520800",
+      "AreaName": "小千谷市",
+      "Kinds": [
+        {
+          "Code": "14",
+          "Name": "雷注意報",
+          "Status": "解除",
+          "Notes": null,
+          "Hazard": "",
+          "Severity": 0,
+          "Active": false
+        }
+      ]
+    },
+    {
+      "AreaCode": "1520900",
+      "AreaName": "加茂市",
+      "Kinds": [
+        {
+          "Code": "14",
+          "Name": "雷注意報",
+          "Status": "解除",
+          "Notes": null,
+          "Hazard": "",
+          "Severity": 0,
+          "Active": false
+        }
+      ]
+    },
+    {
+      "AreaCode": "1521000",
+      "AreaName": "十日町市",
+      "Kinds": [
+        {
+          "Code": "14",
+          "Name": "雷注意報",
+          "Status": "解除",
+          "Notes": null,
+          "Hazard": "",
+          "Severity": 0,
+          "Active": false
+        }
+      ]
+    },
+    {
+      "AreaCode": "1521100",
+      "AreaName": "見附市",
+      "Kinds": [
+        {
+          "Code": "14",
+          "Name": "雷注意報",
+          "Status": "解除",
+          "Notes": null,
+          "Hazard": "",
+          "Severity": 0,
+          "Active": false
+        }
+      ]
+    },
+    {
+      "AreaCode": "1521200",
+      "AreaName": "村上市",
+      "Kinds": [
+        {
+          "Code": "14",
+          "Name": "雷注意報",
+          "Status": "継続",
+          "Notes": null,
+          "Hazard": "",
+          "Severity": 0,
+          "Active": true
+        }
+      ]
+    },
+    {
+      "AreaCode": "1521300",
+      "AreaName": "燕市",
+      "Kinds": [
+        {
+          "Code": "14",
+          "Name": "雷注意報",
+          "Status": "解除",
+          "Notes": null,
+          "Hazard": "",
+          "Severity": 0,
+          "Active": false
+        }
+      ]
+    },
+    {
+      "AreaCode": "1521600",
+      "AreaName": "糸魚川市",
+      "Kinds": [
+        {
+          "Code": "10",
+          "Name": "大雨注意報",
+          "Status": "継続",
+          "Notes": [
+            "土砂災害注意"
+          ],
+          "Hazard": "rain",
+          "Severity": 2,
+          "Active": true
+        },
+        {
+          "Code": "14",
+          "Name": "雷注意報",
+          "Status": "解除",
+          "Notes": null,
+          "Hazard": "",
+          "Severity": 0,
+          "Active": false
+        },
+        {
+          "Code": "20",
+          "Name": "濃霧注意報",
+          "Status": "継続",
+          "Notes": null,
+          "Hazard": "",
+          "Severity": 0,
+          "Active": true
+        }
+      ]
+    },
+    {
+      "AreaCode": "1521700",
+      "AreaName": "妙高市",
+      "Kinds": [
+        {
+          "Code": "14",
+          "Name": "雷注意報",
+          "Status": "解除",
+          "Notes": null,
+          "Hazard": "",
+          "Severity": 0,
+          "Active": false
+        },
+        {
+          "Code": "20",
+          "Name": "濃霧注意報",
+          "Status": "継続",
+          "Notes": null,
+          "Hazard": "",
+          "Severity": 0,
+          "Active": true
+        }
+      ]
+    },
+    {
+      "AreaCode": "1521800",
+      "AreaName": "五泉市",
+      "Kinds": [
+        {
+          "Code": "14",
+          "Name": "雷注意報",
+          "Status": "解除",
+          "Notes": null,
+          "Hazard": "",
+          "Severity": 0,
+          "Active": false
+        }
+      ]
+    },
+    {
+      "AreaCode": "1522200",
+      "AreaName": "上越市",
+      "Kinds": [
+        {
+          "Code": "14",
+          "Name": "雷注意報",
+          "Status": "解除",
+          "Notes": null,
+          "Hazard": "",
+          "Severity": 0,
+          "Active": false
+        },
+        {
+          "Code": "20",
+          "Name": "濃霧注意報",
+          "Status": "継続",
+          "Notes": null,
+          "Hazard": "",
+          "Severity": 0,
+          "Active": true
+        }
+      ]
+    },
+    {
+      "AreaCode": "1522300",
+      "AreaName": "阿賀野市",
+      "Kinds": [
+        {
+          "Code": "14",
+          "Name": "雷注意報",
+          "Status": "解除",
+          "Notes": null,
+          "Hazard": "",
+          "Severity": 0,
+          "Active": false
+        }
+      ]
+    },
+    {
+      "AreaCode": "1522400",
+      "AreaName": "佐渡市",
+      "Kinds": [
+        {
+          "Code": "10",
+          "Name": "大雨注意報",
+          "Status": "継続",
+          "Notes": [
+            "土砂災害注意"
+          ],
+          "Hazard": "rain",
+          "Severity": 2,
+          "Active": true
+        },
+        {
+          "Code": "14",
+          "Name": "雷注意報",
+          "Status": "発表",
+          "Notes": null,
+          "Hazard": "",
+          "Severity": 0,
+          "Active": true
+        },
+        {
+          "Code": "15",
+          "Name": "強風注意報",
+          "Status": "発表",
+          "Notes": null,
+          "Hazard": "",
+          "Severity": 0,
+          "Active": true
+        }
+      ]
+    },
+    {
+      "AreaCode": "1522500",
+      "AreaName": "魚沼市",
+      "Kinds": [
+        {
+          "Code": "14",
+          "Name": "雷注意報",
+          "Status": "解除",
+          "Notes": null,
+          "Hazard": "",
+          "Severity": 0,
+          "Active": false
+        }
+      ]
+    },
+    {
+      "AreaCode": "1522600",
+      "AreaName": "南魚沼市",
+      "Kinds": [
+        {
+          "Code": "14",
+          "Name": "雷注意報",
+          "Status": "解除",
+          "Notes": null,
+          "Hazard": "",
+          "Severity": 0,
+          "Active": false
+        }
+      ]
+    },
+    {
+      "AreaCode": "1522700",
+      "AreaName": "胎内市",
+      "Kinds": [
+        {
+          "Code": "14",
+          "Name": "雷注意報",
+          "Status": "解除",
+          "Notes": null,
+          "Hazard": "",
+          "Severity": 0,
+          "Active": false
+        }
+      ]
+    },
+    {
+      "AreaCode": "1530700",
+      "AreaName": "聖籠町",
+      "Kinds": [
+        {
+          "Code": "14",
+          "Name": "雷注意報",
+          "Status": "解除",
+          "Notes": null,
+          "Hazard": "",
+          "Severity": 0,
+          "Active": false
+        }
+      ]
+    },
+    {
+      "AreaCode": "1534200",
+      "AreaName": "弥彦村",
+      "Kinds": [
+        {
+          "Code": "14",
+          "Name": "雷注意報",
+          "Status": "解除",
+          "Notes": null,
+          "Hazard": "",
+          "Severity": 0,
+          "Active": false
+        }
+      ]
+    },
+    {
+      "AreaCode": "1536100",
+      "AreaName": "田上町",
+      "Kinds": [
+        {
+          "Code": "14",
+          "Name": "雷注意報",
+          "Status": "解除",
+          "Notes": null,
+          "Hazard": "",
+          "Severity": 0,
+          "Active": false
+        }
+      ]
+    },
+    {
+      "AreaCode": "1538500",
+      "AreaName": "阿賀町",
+      "Kinds": [
+        {
+          "Code": "14",
+          "Name": "雷注意報",
+          "Status": "解除",
+          "Notes": null,
+          "Hazard": "",
+          "Severity": 0,
+          "Active": false
+        }
+      ]
+    },
+    {
+      "AreaCode": "1540500",
+      "AreaName": "出雲崎町",
+      "Kinds": [
+        {
+          "Code": "14",
+          "Name": "雷注意報",
+          "Status": "解除",
+          "Notes": null,
+          "Hazard": "",
+          "Severity": 0,
+          "Active": false
+        }
+      ]
+    },
+    {
+      "AreaCode": "1546100",
+      "AreaName": "湯沢町",
+      "Kinds": [
+        {
+          "Code": "14",
+          "Name": "雷注意報",
+          "Status": "解除",
+          "Notes": null,
+          "Hazard": "",
+          "Severity": 0,
+          "Active": false
+        }
+      ]
+    },
+    {
+      "AreaCode": "1548200",
+      "AreaName": "津南町",
+      "Kinds": [
+        {
+          "Code": "14",
+          "Name": "雷注意報",
+          "Status": "解除",
+          "Notes": null,
+          "Hazard": "",
+          "Severity": 0,
+          "Active": false
+        }
+      ]
+    },
+    {
+      "AreaCode": "1550400",
+      "AreaName": "刈羽村",
+      "Kinds": [
+        {
+          "Code": "14",
+          "Name": "雷注意報",
+          "Status": "解除",
+          "Notes": null,
+          "Hazard": "",
+          "Severity": 0,
+          "Active": false
+        }
+      ]
+    },
+    {
+      "AreaCode": "1558100",
+      "AreaName": "関川村",
+      "Kinds": [
+        {
+          "Code": "14",
+          "Name": "雷注意報",
+          "Status": "継続",
+          "Notes": null,
+          "Hazard": "",
+          "Severity": 0,
+          "Active": true
+        }
+      ]
+    },
+    {
+      "AreaCode": "1558600",
+      "AreaName": "粟島浦村",
+      "Kinds": [
+        {
+          "Code": "14",
+          "Name": "雷注意報",
+          "Status": "継続",
+          "Notes": null,
+          "Hazard": "",
+          "Severity": 0,
+          "Active": true
+        }
+      ]
+    }
+  ],
+  "Quake": null
+}

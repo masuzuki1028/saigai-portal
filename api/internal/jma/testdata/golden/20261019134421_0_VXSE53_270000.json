@@ -1,0 +1,31 @@
+{
+  "ID": "93676c79deb0c4f9154bd4889657e46ed6be7993466c361d420a034f2215b649",
+  "Source": "jma_xml",
+  "Kind": "earthquake",
+  "Title": "震源・震度情報",
+  "Headline": "１９日２２時４１分ころ、地震がありました。",
+  "InfoType": "発表",
+  "IssuedAt": "2026-10-19T22:44:00+09:00",
+  "ReportURL": "https://www.data.jma.go.jp/developer/xml/data/20261019134421_0_VXSE53_270000.xml",
+  "Warnings": null,
+  "Quake": {
+    "EventID": "20261019224143",
+    "Serial": "1",
+    "OriginTime": "2026-10-19T22:41:00+09:00",
+    "Hypocenter": "沖縄本島近海",
+    "Magnitude": "Ｍ３．６",
+    "MaxInt": "1",
+    "Cities": [
+      {
+        "Code": "4653200",
+        "Name": "伊仙町",
+        "MaxInt": "1"
+      },
+      {
+        "Code": "4653400",
+        "Name": "知名町",
+        "MaxInt": "1"
+      }
+    ]
+  }
+}

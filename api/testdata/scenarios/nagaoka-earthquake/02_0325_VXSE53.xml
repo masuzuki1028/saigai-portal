@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 災害シナリオ用に作成した電文（実在の発表ではない）。構造は震源・震度に関する情報（VXSE53）に合わせている -->
+<Report xmlns="http://xml.kishou.go.jp/jmaxml1/" xmlns:jmx="http://xml.kishou.go.jp/jmaxml1/">
+<Control>
+<Title>震源・震度に関する情報</Title>
+<DateTime>2026-07-31T18:25:00Z</DateTime>
+<Status>通常</Status>
+<EditorialOffice>気象庁本庁</EditorialOffice>
+<PublishingOffice>気象庁</PublishingOffice>
+</Control>
+<Head xmlns="http://xml.kishou.go.jp/jmaxml1/informationBasis1/">
+<Title>震源・震度情報</Title>
+<ReportDateTime>2026-08-01T03:25:00+09:00</ReportDateTime>
+<TargetDateTime>2026-08-01T03:25:00+09:00</TargetDateTime>
+<EventID>20260801031200</EventID>
+<InfoType>発表</InfoType>
+<Serial>2</Serial>
+<InfoKind>地震情報</InfoKind>
+<InfoKindVersion>1.0_1</InfoKindVersion>
+<Headline>
+<Text>０１日０３時１２分ころ、地震がありました。</Text>
+</Headline>
+</Head>
+<Body xmlns="http://xml.kishou.go.jp/jmaxml1/body/seismology1/" xmlns:jmx_eb="http://xml.kishou.go.jp/jmaxml1/elementBasis1/">
+<Earthquake>
+<OriginTime>2026-08-01T03:12:00+09:00</OriginTime>
+<ArrivalTime>2026-08-01T03:12:00+09:00</ArrivalTime>
+<Hypocenter>
+<Area>
+<Name>新潟県中越地方</Name>
+<Code type="震央地名">460</Code>
+<jmx_eb:Coordinate description="北緯３７．３度　東経１３８．９度　深さ　１０ｋｍ" >+37.3+138.9-10000/</jmx_eb:Coordinate>
+</Area>
+</Hypocenter>
+<jmx_eb:Magnitude type="Mj" description="Ｍ６．５">6.5</jmx_eb:Magnitude>
+</Earthquake>
+<Intensity>
+<Observation>
+<MaxInt>6+</MaxInt>
+<Pref><Name>新潟県</Name><Code>15</Code><MaxInt>6+</MaxInt>
+<Area><Name>新潟県中越</Name><Code>461</Code><MaxInt>6+</MaxInt>
+<City><Name>長岡市</Name><Code>1520200</Code><MaxInt>6-</MaxInt></City>
+<City><Name>小千谷市</Name><Code>1520800</Code><MaxInt>6+</MaxInt></City>
+</Area>
+<Area><Name>新潟県下越</Name><Code>460</Code><MaxInt>4</MaxInt>
+<City><Name>新潟市中央区</Name><Code>1510300</Code><MaxInt>4</MaxInt></City>
+</Area>
+</Pref>
+</Observation>
+</Intensity>
+<Comments>
+<ForecastComment codeType="固定付加文">
+<Text>この地震による津波の心配はありません。</Text>
+<Code>0215</Code>
+</ForecastComment>
+</Comments>
+</Body>
+</Report>

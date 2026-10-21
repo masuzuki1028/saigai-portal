@@ -1,0 +1,23 @@
+# ローカル開発用（DynamoDB Local / Mailpit）
+# イメージは公開から2週間以上経ったバージョンに固定する（docs/07_security.md 4.2）
+services:
+  dynamodb:
+    image: amazon/dynamodb-local:3.3.1
+    command: ["-jar", "DynamoDBLocal.jar", "-sharedDb", "-dbPath", "/home/dynamodblocal/data"]
+    working_dir: /home/dynamodblocal
+    user: root
+    ports:
+      - "127.0.0.1:8000:8000"
+    volumes:
+      - dynamodb-data:/home/dynamodblocal/data
+
+  mailpit:
+    image: axllent/mailpit:v1.31.3
+    ports:
+      - "127.0.0.1:1025:1025" # SMTP
+      - "127.0.0.1:8025:8025" # Web UI
+    environment:
+      MP_MAX_MESSAGES: "500"
+
+volumes:
+  dynamodb-data:

@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom" lang="ja">
+  <title>長期（随時）</title>
+  <subtitle>JMAXML publishing feed</subtitle>
+  <updated>2026-10-20T16:59:52+09:00</updated>
+  <id>https://www.data.jma.go.jp/developer/xml/feed/extra.xml#long_1792483192</id>
+  <link rel="related" href="https://www.jma.go.jp/"/>
+  <link rel="self" href="https://www.data.jma.go.jp/developer/xml/feed/extra.xml"/>
+  <link rel="hub" href="http://alert-hub.appspot.com/"/>
+  <rights type="html"><![CDATA[
+<a href="https://www.jma.go.jp/jma/kishou/info/coment.html">利用規約</a>,
+<a href="https://www.jma.go.jp/jma/en/copyright.html">Terms of Use</a>
+]]></rights>
+  <entry>
+    <title>気象警報・注意報（Ｈ２７）</title>
+    <id>https://www.data.jma.go.jp/developer/xml/data/20261020075745_0_VPWW54_150000.xml</id>
+    <updated>2026-10-20T07:57:44Z</updated>
+    <author>
+      <name>新潟地方気象台</name>
+    </author>
+    <link type="application/xml" href="https://www.data.jma.go.jp/developer/xml/data/20261020075745_0_VPWW54_150000.xml"/>
+    <content type="text">【新潟県気象警報・注意報】佐渡では、土砂災害や強風に注意してください。下越、佐渡では、竜巻などの激しい突風や落雷に注意してください。上越では、濃霧による視程障害に注意してください。</content>
+  </entry>
+  <entry>
+    <title>府県気象情報</title>
+    <id>https://www.data.jma.go.jp/developer/xml/data/20261020075928_0_VPFJ50_474000.xml</id>
+    <updated>2026-10-20T07:59:28Z</updated>
+    <author>
+      <name>石垣島地方気象台</name>
+    </author>
+    <link type="application/xml" href="https://www.data.jma.go.jp/developer/xml/data/20261020075928_0_VPFJ50_474000.xml"/>
+    <content type="text">【八重山地方気象解説情報（台風第３０号）】台風第３０号は、２３日から２４日頃にかけて非常に強い勢力で八重山地方に接近する見込みです。八重山地方では暴風や高波、大雨に警戒してください。また、台風の進路等によっては、警報級の高潮となるおそれがあります。風が強まる前に早めの台風対策が必要です。</content>
+  </entry>
+  <entry>
+    <title>気象警報・注意報（Ｈ２７）</title>
+    <id>https://www.data.jma.go.jp/developer/xml/data/20261020075747_0_VPWW54_160000.xml</id>
+    <updated>2026-10-20T07:57:46Z</updated>
+    <author>
+      <name>富山地方気象台</name>
+    </author>
+    <link type="application/xml" href="https://www.data.jma.go.jp/developer/xml/data/20261020075747_0_VPWW54_160000.xml"/>
+    <content type="text">【富山県気象警報・注意報】富山県では、土砂災害や竜巻などの激しい突風、落雷に注意してください。</content>
+  </entry>
+</feed>

@@ -1,0 +1,46 @@
+{
+  "ID": "2c026e854a90c0b42ed1ac727dc4a6883f70929e4f178e7487641666f0e90ac1",
+  "Source": "jma_xml",
+  "Kind": "earthquake",
+  "Title": "震源・震度情報",
+  "Headline": "２０日０５時５０分ころ、地震がありました。",
+  "InfoType": "発表",
+  "IssuedAt": "2026-10-20T05:53:00+09:00",
+  "ReportURL": "https://www.data.jma.go.jp/developer/xml/data/20261019205328_0_VXSE53_010000.xml",
+  "Warnings": null,
+  "Quake": {
+    "EventID": "20261020055029",
+    "Serial": "1",
+    "OriginTime": "2026-10-20T05:50:00+09:00",
+    "Hypocenter": "釧路沖",
+    "Magnitude": "Ｍ４．０",
+    "MaxInt": "2",
+    "Cities": [
+      {
+        "Code": "0120600",
+        "Name": "釧路市",
+        "MaxInt": "2"
+      },
+      {
+        "Code": "0166100",
+        "Name": "釧路町",
+        "MaxInt": "1"
+      },
+      {
+        "Code": "0166300",
+        "Name": "浜中町",
+        "MaxInt": "1"
+      },
+      {
+        "Code": "0166400",
+        "Name": "標茶町",
+        "MaxInt": "1"
+      },
+      {
+        "Code": "0166800",
+        "Name": "白糠町",
+        "MaxInt": "1"
+      }
+    ]
+  }
+}

@@ -2,8 +2,8 @@
 
 登録した場所の周りで起きている災害の情報を、1本のタイムラインにまとめて見られる Web サービスです。気象庁などの公式情報に加え、Phase 2 からは SNS に投稿された現地の様子も表示します。
 
-> **現在の状況: 設計段階**
-> 設計ドキュメント（[docs/](docs/)）を作成しています。実装はまだ始めていません。
+> **現在の状況: MVP をローカル環境で実装中**
+> 気象庁の警報・注意報と地震の情報を取り込み、地点ごとのタイムラインとメール通知までをローカルで動かせます。AWS への構築はこれからです。
 
 ---
 
@@ -67,6 +67,30 @@ flowchart LR
 - **災害時に止まらない**: 画面は CloudFront から配信します。東京リージョンが被災したときは、大阪リージョンに切り替えて、公式情報の取り込みと通知を続けます（[10](docs/10_disaster_recovery.md)）
 - **安全にリリースする**: ブルーグリーン、ダークリリース、シャドー、カナリアで段階的に公開します。大規模な災害の対応中は、本番へのリリースを止めます（[09](docs/09_release_strategy.md)）
 - **災害時の流れを再現して検証する**: 過去の電文 XML を流して、取り込みから通知までを手元で再現します。外部の API には依存せずにテストします（[08](docs/08_test_strategy.md)）
+
+---
+
+## ローカルで動かす
+
+必要なもの: Docker、Go 1.26 以上、Node.js 24（`web/.nvmrc`）
+
+```sh
+docker compose up -d                       # DynamoDB Local と Mailpit
+
+# 災害シナリオを流す（新潟県中越の大雨: 注意報 → 警報 → 特別警報 → 解除）
+cd api
+go run -tags local ./cmd/replay niigata-heavy-rain
+go run -tags local ./cmd/local             # API サーバー（http://127.0.0.1:8080/api）
+
+# 別のターミナルで画面を起動する
+cd web
+npm ci --ignore-scripts
+npm run dev:local                          # http://localhost:3000 → alice でログイン
+```
+
+- 通知のメールは Mailpit（http://localhost:8025）で確認できます
+- API なしで画面だけを動かす場合は `npm run dev:mock`（`?scenario=heavy-rain` などでデータを切り替え）
+- テストのコマンドは [CLAUDE.md](CLAUDE.md) の「コマンド」を参照してください
 
 ---
 

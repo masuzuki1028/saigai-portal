@@ -1,0 +1,8 @@
+# go generate ./... で internal/apigen/api.gen.go を再生成する
+package: apigen
+output: api.gen.go # go generate を実行するディレクトリ（internal/apigen）からの相対パス
+generate:
+  models: true
+  std-http-server: true
+  strict-server: true
+  embedded-spec: true

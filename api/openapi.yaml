@@ -1,0 +1,498 @@
+openapi: 3.0.3
+info:
+  title: saigai-timeline API
+  version: 0.1.0
+  description: |
+    登録した地点の周辺の災害情報をタイムラインで返す API。
+    すべてのエンドポイントは、`/api/health` を除いて認証が必要（Bearer トークン）。
+    リクエストに含まれる ID は信用せず、トークンから引いたユーザーで認可する。
+servers:
+  - url: /api
+security:
+  - bearerAuth: []
+
+paths:
+  /health:
+    get:
+      operationId: getHealth
+      security: []
+      responses:
+        "200":
+          description: 稼働中
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Health"
+
+  /me:
+    get:
+      operationId: getMe
+      responses:
+        "200":
+          description: ログイン中のユーザー
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Me"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /me/notification-settings:
+    get:
+      operationId: getNotificationSettings
+      responses:
+        "200":
+          description: 通知設定
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotificationSettings"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    put:
+      operationId: putNotificationSettings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NotificationSettings"
+      responses:
+        "200":
+          description: 更新後の通知設定
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotificationSettings"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /me/notification-settings/test:
+    post:
+      operationId: sendTestNotification
+      responses:
+        "202":
+          description: テスト通知を送信した
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "409":
+          description: メール通知がオフになっている
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /locations:
+    get:
+      operationId: listLocations
+      responses:
+        "200":
+          description: 自分の地点の一覧
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LocationList"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      operationId: createLocation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LocationInput"
+      responses:
+        "201":
+          description: 登録した地点
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Location"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "409":
+          description: 地点の上限に達している
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /locations/{locationId}:
+    parameters:
+      - $ref: "#/components/parameters/LocationId"
+    get:
+      operationId: getLocation
+      responses:
+        "200":
+          description: 地点
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Location"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    put:
+      operationId: updateLocation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LocationUpdate"
+      responses:
+        "200":
+          description: 更新後の地点
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Location"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          description: ほかの更新と競合した（version が古い）
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    delete:
+      operationId: deleteLocation
+      responses:
+        "204":
+          description: 削除した
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /locations/{locationId}/timeline:
+    parameters:
+      - $ref: "#/components/parameters/LocationId"
+    get:
+      operationId: getTimeline
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 30
+        - name: cursor
+          in: query
+          description: 前のページの `nextCursor`
+          schema:
+            type: string
+            maxLength: 512
+      responses:
+        "200":
+          description: タイムライン（新しい順）
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Timeline"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+
+  parameters:
+    LocationId:
+      name: locationId
+      in: path
+      required: true
+      schema:
+        type: string
+        pattern: "^[0-9A-HJKMNP-TV-Z]{26}$"
+
+  responses:
+    BadRequest:
+      description: 入力が不正
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    Unauthorized:
+      description: 認証されていない
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    NotFound:
+      description: 見つからない（他人のリソースも 404 を返す）
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+
+  schemas:
+    Error:
+      type: object
+      required: [code, message]
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+
+    Health:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [ok]
+
+    Me:
+      type: object
+      required: [userId, plan, locationLimit]
+      properties:
+        userId:
+          type: string
+        plan:
+          $ref: "#/components/schemas/Plan"
+        locationLimit:
+          type: integer
+
+    Plan:
+      type: string
+      enum: [free, personal_plus, business]
+
+    NotificationSettings:
+      type: object
+      required: [emailEnabled]
+      properties:
+        emailEnabled:
+          type: boolean
+          description: アカウントのメールアドレスに通知する
+
+    Hazard:
+      type: string
+      enum: [rain, flood, landslide, earthquake, tsunami]
+
+    Severity:
+      type: integer
+      description: 1=情報, 2=注意報, 3=警報, 4=特別警報
+      minimum: 1
+      maximum: 4
+
+    Threshold:
+      type: integer
+      description: この severity 以上を対象にする。0 は OFF
+      minimum: 0
+      maximum: 4
+
+    Intensity:
+      type: string
+      description: 震度（"5-" は5弱、"5+" は5強）。"off" は OFF
+      enum: ["1", "2", "3", "4", "5-", "5+", "6-", "6+", "7", "off"]
+      x-enum-varnames: [Int1, Int2, Int3, Int4, Int5Lower, Int5Upper, Int6Lower, Int6Upper, Int7, IntOff]
+
+    LevelSetting:
+      type: object
+      required: [display, notify]
+      properties:
+        display:
+          $ref: "#/components/schemas/Threshold"
+        notify:
+          $ref: "#/components/schemas/Threshold"
+
+    EarthquakeSetting:
+      type: object
+      required: [displayMinIntensity, notifyMinIntensity]
+      properties:
+        displayMinIntensity:
+          $ref: "#/components/schemas/Intensity"
+        notifyMinIntensity:
+          $ref: "#/components/schemas/Intensity"
+
+    HazardSettings:
+      type: object
+      required: [rain, flood, landslide, earthquake, tsunami]
+      properties:
+        rain:
+          $ref: "#/components/schemas/LevelSetting"
+        flood:
+          $ref: "#/components/schemas/LevelSetting"
+        landslide:
+          $ref: "#/components/schemas/LevelSetting"
+        earthquake:
+          $ref: "#/components/schemas/EarthquakeSetting"
+        tsunami:
+          $ref: "#/components/schemas/LevelSetting"
+
+    RadiusM:
+      type: integer
+      enum: [1000, 3000, 5000, 10000]
+      x-enum-varnames: [Radius1km, Radius3km, Radius5km, Radius10km]
+
+    LatLon:
+      type: object
+      required: [lat, lon]
+      properties:
+        lat:
+          type: number
+          format: double
+          minimum: 20
+          maximum: 46
+        lon:
+          type: number
+          format: double
+          minimum: 122
+          maximum: 154
+
+    LocationInput:
+      type: object
+      required: [name, coord, radiusM]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 40
+        coord:
+          $ref: "#/components/schemas/LatLon"
+        address:
+          type: string
+          maxLength: 200
+          description: 任意。暗号化して保存する
+        radiusM:
+          $ref: "#/components/schemas/RadiusM"
+        hazardSettings:
+          $ref: "#/components/schemas/HazardSettings"
+
+    LocationUpdate:
+      allOf:
+        - $ref: "#/components/schemas/LocationInput"
+        - type: object
+          required: [version]
+          properties:
+            version:
+              type: integer
+              description: 取得したときの version（楽観ロック）
+
+    CurrentLevel:
+      type: object
+      required: [hazard, severity, title]
+      properties:
+        hazard:
+          $ref: "#/components/schemas/Hazard"
+        severity:
+          $ref: "#/components/schemas/Severity"
+        title:
+          type: string
+          description: 例 "大雨警報"
+
+    Location:
+      type: object
+      required:
+        [id, name, coord, radiusM, geohash6, areaName, isCoastal, hazardSettings, currentLevels, version, createdAt, updatedAt]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        coord:
+          $ref: "#/components/schemas/LatLon"
+        address:
+          type: string
+        radiusM:
+          $ref: "#/components/schemas/RadiusM"
+        geohash6:
+          type: string
+        areaName:
+          type: string
+          description: 市区町村名
+        isCoastal:
+          type: boolean
+        hazardSettings:
+          $ref: "#/components/schemas/HazardSettings"
+        currentLevels:
+          type: array
+          description: 現在発表中の情報（種別ごとの最大レベル）
+          items:
+            $ref: "#/components/schemas/CurrentLevel"
+        version:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    LocationList:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Location"
+
+    TimelineItem:
+      type: object
+      required: [id, kind, hazard, severity, reliability, title, summary, status, source, issuedAt]
+      properties:
+        id:
+          type: string
+        kind:
+          type: string
+          enum: [official, sns, report]
+        hazard:
+          $ref: "#/components/schemas/Hazard"
+        severity:
+          $ref: "#/components/schemas/Severity"
+        reliability:
+          type: string
+          enum: [official, corroborated, unverified, reported]
+        title:
+          type: string
+        summary:
+          type: string
+        status:
+          type: string
+          enum: [issued, continued, cleared]
+          description: 発表 / 継続（レベルの変化あり） / 解除
+        source:
+          type: string
+          description: 出典の表示名（例 "気象庁"）
+        sourceUrl:
+          type: string
+        issuedAt:
+          type: string
+          format: date-time
+        notified:
+          type: boolean
+
+    Timeline:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/TimelineItem"
+        nextCursor:
+          type: string

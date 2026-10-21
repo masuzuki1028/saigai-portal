@@ -1,0 +1,491 @@
+/* スマホ優先。レベルは色だけでなくアイコンと文字でも区別する（docs/03 5章） */
+:root {
+  --bg: #f8fafc;
+  --surface: #ffffff;
+  --text: #0f172a;
+  --muted: #475569;
+  --border: #cbd5e1;
+  --primary: #1d4ed8;
+  --primary-text: #ffffff;
+  --danger: #b91c1c;
+  --success: #166534;
+  --level-0: #15803d;
+  --level-1: #475569;
+  --level-2: #a16207;
+  --level-3: #c2410c;
+  --level-4: #7e22ce;
+  --level-2-bg: #fef9c3;
+  --level-3-bg: #ffedd5;
+  --level-4-bg: #f3e8ff;
+  --official: #1d4ed8;
+  --unverified: #64748b;
+  --radius: 10px;
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0b1220;
+    --surface: #111a2e;
+    --text: #e2e8f0;
+    --muted: #94a3b8;
+    --border: #334155;
+    --primary: #60a5fa;
+    --primary-text: #0b1220;
+    --danger: #f87171;
+    --success: #4ade80;
+    --level-0: #4ade80;
+    --level-1: #94a3b8;
+    --level-2: #facc15;
+    --level-3: #fb923c;
+    --level-4: #c084fc;
+    --level-2-bg: #3a3005;
+    --level-3-bg: #3b1d08;
+    --level-4-bg: #2e1446;
+    --official: #93c5fd;
+    color-scheme: dark;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: system-ui, -apple-system, "Hiragino Sans", "Noto Sans JP", sans-serif;
+  line-height: 1.6;
+  -webkit-text-size-adjust: 100%;
+}
+
+a {
+  color: var(--primary);
+}
+
+h1 {
+  font-size: 1.25rem;
+  margin: 0;
+}
+
+h2 {
+  font-size: 1.1rem;
+}
+
+.main {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 16px;
+}
+
+.main.narrow {
+  max-width: 560px;
+}
+
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+
+.header h1 {
+  flex: 1;
+  font-size: 1rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.header-nav {
+  display: flex;
+  gap: 12px;
+  font-size: 0.875rem;
+}
+
+.brand {
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.back {
+  font-size: 1.25rem;
+  text-decoration: none;
+  padding: 0 4px;
+}
+
+.footer {
+  max-width: 720px;
+  margin: 24px auto;
+  padding: 0 16px;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.disclaimer {
+  font-size: 0.8rem;
+  color: var(--muted);
+  border-left: 3px solid var(--border);
+  padding-left: 8px;
+}
+
+.lead {
+  font-size: 1.05rem;
+}
+
+.muted {
+  color: var(--muted);
+  font-size: 0.875rem;
+}
+
+.empty {
+  padding: 24px 0;
+  color: var(--muted);
+}
+
+.error {
+  color: var(--danger);
+  font-weight: 600;
+}
+
+.success {
+  color: var(--success);
+}
+
+.banner {
+  background: var(--level-3-bg);
+  border: 1px solid var(--level-3);
+  border-radius: var(--radius);
+  padding: 8px 12px;
+  font-weight: 600;
+}
+
+.notice {
+  background: var(--surface);
+  border: 1px dashed var(--border);
+  border-radius: var(--radius);
+  padding: 8px 12px;
+}
+
+button,
+.button {
+  display: inline-block;
+  min-height: 44px;
+  padding: 10px 16px;
+  border: none;
+  border-radius: var(--radius);
+  background: var(--primary);
+  color: var(--primary-text);
+  font: inherit;
+  font-weight: 600;
+  text-decoration: none;
+  text-align: center;
+  cursor: pointer;
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+button.secondary {
+  background: transparent;
+  color: var(--primary);
+  border: 1px solid var(--primary);
+}
+
+button.danger {
+  margin-top: 24px;
+  background: transparent;
+  color: var(--danger);
+  border: 1px solid var(--danger);
+}
+
+button.link {
+  min-height: auto;
+  padding: 0;
+  background: none;
+  color: var(--primary);
+  font-weight: 400;
+  text-decoration: underline;
+}
+
+:focus-visible {
+  outline: 3px solid var(--primary);
+  outline-offset: 2px;
+}
+
+/* 地点カード */
+.cards {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  gap: 12px;
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 6px solid var(--level-0);
+  border-radius: var(--radius);
+}
+
+.card.level-border-2 {
+  border-left-color: var(--level-2);
+}
+.card.level-border-3 {
+  border-left-color: var(--level-3);
+}
+.card.level-border-4 {
+  border-left-color: var(--level-4);
+}
+
+.card-link {
+  display: grid;
+  gap: 6px;
+  padding: 12px 14px;
+  color: inherit;
+  text-decoration: none;
+}
+
+.card-title {
+  font-weight: 700;
+}
+
+.levels {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 4px;
+}
+
+/* レベル表示 */
+.badge {
+  display: inline-block;
+  padding: 0 8px;
+  border-radius: 999px;
+  border: 1px solid currentColor;
+  font-size: 0.8rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.level-0 {
+  color: var(--level-0);
+}
+.level-1 {
+  color: var(--level-1);
+}
+.level-2 {
+  color: var(--level-2);
+  background: var(--level-2-bg);
+}
+.level-3 {
+  color: var(--level-3);
+  background: var(--level-3-bg);
+}
+.level-4 {
+  color: var(--level-4);
+  background: var(--level-4-bg);
+}
+
+/* タイムライン */
+.toolbar {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.toolbar .muted {
+  flex: 1;
+}
+
+.current {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 4px 12px;
+  margin-bottom: 12px;
+}
+
+.tabs {
+  display: flex;
+  gap: 4px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 8px;
+}
+
+.tabs button {
+  background: none;
+  color: var(--muted);
+  border-radius: 0;
+  border-bottom: 3px solid transparent;
+  font-weight: 600;
+}
+
+.tabs button[aria-selected="true"] {
+  color: var(--text);
+  border-bottom-color: var(--primary);
+}
+
+.timeline {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.timeline-item {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--official);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+  margin-bottom: 10px;
+}
+
+.timeline-item.kind-sns {
+  border-left-color: var(--unverified);
+  border-left-style: dashed;
+}
+
+.timeline-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  align-items: center;
+  font-size: 0.85rem;
+}
+
+.timeline-title {
+  font-size: 1rem;
+  margin: 6px 0 2px;
+}
+
+.timeline-item p {
+  margin: 4px 0;
+}
+
+.reliability.rel-official {
+  color: var(--official);
+  font-weight: 700;
+}
+
+.reliability.rel-unverified {
+  color: var(--unverified);
+}
+
+.source {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+/* フォーム */
+.form {
+  display: grid;
+  gap: 16px;
+}
+
+.form label {
+  display: grid;
+  gap: 4px;
+  font-weight: 600;
+}
+
+input,
+select {
+  font: inherit;
+  min-height: 44px;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+}
+
+fieldset {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px;
+  margin: 0;
+  display: grid;
+  gap: 8px;
+}
+
+legend {
+  font-weight: 700;
+  padding: 0 4px;
+}
+
+.radios {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+}
+
+.form label.radio,
+.form label.checkbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 400;
+}
+
+.radio input,
+.checkbox input {
+  min-height: auto;
+  width: 20px;
+  height: 20px;
+}
+
+.settings table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.settings th,
+.settings td {
+  padding: 4px;
+  text-align: left;
+}
+
+.settings select {
+  width: 100%;
+}
+
+/* 地図 */
+.map {
+  width: 100%;
+  height: 60vh;
+  min-height: 280px;
+  border-radius: var(--radius);
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+
+.map-picker {
+  height: 300px;
+}
+
+.login-users {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  gap: 12px;
+}
+
+.login-users button {
+  width: 100%;
+}
+
+.features {
+  padding-left: 1.2em;
+}

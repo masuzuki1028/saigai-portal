@@ -1,0 +1,290 @@
+{
+  "ID": "8c6dd3320a55bebb109cd21025b60fa578282cd50d8cc154123d32eb2722a30c",
+  "Source": "jma_xml",
+  "Kind": "warning",
+  "Title": "富山県気象警報・注意報",
+  "Headline": "富山県では、土砂災害や竜巻などの激しい突風、落雷に注意してください。",
+  "InfoType": "発表",
+  "IssuedAt": "2026-10-20T16:57:00+09:00",
+  "ReportURL": "https://www.data.jma.go.jp/developer/xml/data/20261020075747_0_VPWW54_160000.xml",
+  "Warnings": [
+    {
+      "AreaCode": "1620111",
+      "AreaName": "富山市平地",
+      "Kinds": [
+        {
+          "Code": "14",
+          "Name": "雷注意報",
+          "Status": "継続",
+          "Notes": null,
+          "Hazard": "",
+          "Severity": 0,
+          "Active": true
+        }
+      ]
+    },
+    {
+      "AreaCode": "1620112",
+      "AreaName": "富山市山間部東",
+      "Kinds": [
+        {
+          "Code": "14",
+          "Name": "雷注意報",
+          "Status": "継続",
+          "Notes": null,
+          "Hazard": "",
+          "Severity": 0,
+          "Active": true
+        }
+      ]
+    },
+    {
+      "AreaCode": "1620113",
+      "AreaName": "富山市山間部西",
+      "Kinds": [
+        {
+          "Code": "14",
+          "Name": "雷注意報",
+          "Status": "継続",
+          "Notes": null,
+          "Hazard": "",
+          "Severity": 0,
+          "Active": true
+        }
+      ]
+    },
+    {
+      "AreaCode": "1620200",
+      "AreaName": "高岡市",
+      "Kinds": [
+        {
+          "Code": "14",
+          "Name": "雷注意報",
+          "Status": "継続",
+          "Notes": null,
+          "Hazard": "",
+          "Severity": 0,
+          "Active": true
+        }
+      ]
+    },
+    {
+      "AreaCode": "1620400",
+      "AreaName": "魚津市",
+      "Kinds": [
+        {
+          "Code": "14",
+          "Name": "雷注意報",
+          "Status": "継続",
+          "Notes": null,
+          "Hazard": "",
+          "Severity": 0,
+          "Active": true
+        }
+      ]
+    },
+    {
+      "AreaCode": "1620500",
+      "AreaName": "氷見市",
+      "Kinds": [
+        {
+          "Code": "10",
+          "Name": "大雨注意報",
+          "Status": "継続",
+          "Notes": [
+            "土砂災害注意"
+          ],
+          "Hazard": "rain",
+          "Severity": 2,
+          "Active": true
+        },
+        {
+          "Code": "14",
+          "Name": "雷注意報",
+          "Status": "継続",
+          "Notes": null,
+          "Hazard": "",
+          "Severity": 0,
+          "Active": true
+        }
+      ]
+    },
+    {
+      "AreaCode": "1620600",
+      "AreaName": "滑川市",
+      "Kinds": [
+        {
+          "Code": "14",
+          "Name": "雷注意報",
+          "Status": "継続",
+          "Notes": null,
+          "Hazard": "",
+          "Severity": 0,
+          "Active": true
+        }
+      ]
+    },
+    {
+      "AreaCode": "1620700",
+      "AreaName": "黒部市",
+      "Kinds": [
+        {
+          "Code": "14",
+          "Name": "雷注意報",
+          "Status": "継続",
+          "Notes": null,
+          "Hazard": "",
+          "Severity": 0,
+          "Active": true
+        }
+      ]
+    },
+    {
+      "AreaCode": "1620800",
+      "AreaName": "砺波市",
+      "Kinds": [
+        {
+          "Code": "14",
+          "Name": "雷注意報",
+          "Status": "継続",
+          "Notes": null,
+          "Hazard": "",
+          "Severity": 0,
+          "Active": true
+        }
+      ]
+    },
+    {
+      "AreaCode": "1620900",
+      "AreaName": "小矢部市",
+      "Kinds": [
+        {
+          "Code": "14",
+          "Name": "雷注意報",
+          "Status": "継続",
+          "Notes": null,
+          "Hazard": "",
+          "Severity": 0,
+          "Active": true
+        }
+      ]
+    },
+    {
+      "AreaCode": "1621000",
+      "AreaName": "南砺市",
+      "Kinds": [
+        {
+          "Code": "14",
+          "Name": "雷注意報",
+          "Status": "継続",
+          "Notes": null,
+          "Hazard": "",
+          "Severity": 0,
+          "Active": true
+        }
+      ]
+    },
+    {
+      "AreaCode": "1621100",
+      "AreaName": "射水市",
+      "Kinds": [
+        {
+          "Code": "14",
+          "Name": "雷注意報",
+          "Status": "継続",
+          "Notes": null,
+          "Hazard": "",
+          "Severity": 0,
+          "Active": true
+        }
+      ]
+    },
+    {
+      "AreaCode": "1632100",
+      "AreaName": "舟橋村",
+      "Kinds": [
+        {
+          "Code": "14",
+          "Name": "雷注意報",
+          "Status": "継続",
+          "Notes": null,
+          "Hazard": "",
+          "Severity": 0,
+          "Active": true
+        }
+      ]
+    },
+    {
+      "AreaCode": "1632200",
+      "AreaName": "上市町",
+      "Kinds": [
+        {
+          "Code": "14",
+          "Name": "雷注意報",
+          "Status": "継続",
+          "Notes": null,
+          "Hazard": "",
+          "Severity": 0,
+          "Active": true
+        }
+      ]
+    },
+    {
+      "AreaCode": "1632300",
+      "AreaName": "立山町",
+      "Kinds": [
+        {
+          "Code": "14",
+          "Name": "雷注意報",
+          "Status": "継続",
+          "Notes": null,
+          "Hazard": "",
+          "Severity": 0,
+          "Active": true
+        }
+      ]
+    },
+    {
+      "AreaCode": "1634200",
+      "AreaName": "入善町",
+      "Kinds": [
+        {
+          "Code": "10",
+          "Name": "大雨注意報",
+          "Status": "継続",
+          "Notes": [
+            "土砂災害注意"
+          ],
+          "Hazard": "rain",
+          "Severity": 2,
+          "Active": true
+        },
+        {
+          "Code": "14",
+          "Name": "雷注意報",
+          "Status": "継続",
+          "Notes": null,
+          "Hazard": "",
+          "Severity": 0,
+          "Active": true
+        }
+      ]
+    },
+    {
+      "AreaCode": "1634300",
+      "AreaName": "朝日町",
+      "Kinds": [
+        {
+          "Code": "14",
+          "Name": "雷注意報",
+          "Status": "継続",
+          "Notes": null,
+          "Hazard": "",
+          "Severity": 0,
+          "Active": true
+        }
+      ]
+    }
+  ],
+  "Quake": null
+}

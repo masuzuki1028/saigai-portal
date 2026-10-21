@@ -1,0 +1,11 @@
+{
+  "_comment": "気象警報・注意報（H27）の種類コード → 種別・severity。docs/04_data_model.md 4.1。気象庁の体系の見直しに合わせて、コードを変えずにこのファイルで差し替える",
+  "warnings": {
+    "33": { "name": "大雨特別警報", "hazard": "rain", "severity": 4, "landslideSeverity": 4 },
+    "03": { "name": "大雨警報", "hazard": "rain", "severity": 3, "landslideSeverity": 3 },
+    "10": { "name": "大雨注意報", "hazard": "rain", "severity": 2 },
+    "04": { "name": "洪水警報", "hazard": "flood", "severity": 3 },
+    "18": { "name": "洪水注意報", "hazard": "flood", "severity": 2 }
+  },
+  "landslideNote": "土砂災害"
+}

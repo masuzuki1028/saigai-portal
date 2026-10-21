@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 災害シナリオ用に作成した電文（実在の発表ではない）。構造は気象警報・注意報（Ｈ２７）（VPWW54）に合わせている -->
+<Report xmlns="http://xml.kishou.go.jp/jmaxml1/" xmlns:jmx="http://xml.kishou.go.jp/jmaxml1/">
+<Control>
+<Title>気象警報・注意報（Ｈ２７）</Title>
+<DateTime>2026-07-10T14:00:00Z</DateTime>
+<Status>通常</Status>
+<EditorialOffice>新潟地方気象台</EditorialOffice>
+<PublishingOffice>新潟地方気象台</PublishingOffice>
+</Control>
+<Head xmlns="http://xml.kishou.go.jp/jmaxml1/informationBasis1/">
+<Title>新潟県気象警報・注意報</Title>
+<ReportDateTime>2026-07-10T23:00:00+09:00</ReportDateTime>
+<TargetDateTime>2026-07-10T23:00:00+09:00</TargetDateTime>
+<EventID/>
+<InfoType>発表</InfoType>
+<Serial/>
+<InfoKind>気象警報・注意報</InfoKind>
+<InfoKindVersion>1.2_2</InfoKindVersion>
+<Headline>
+<Text>新潟県では、警報・注意報は解除されました。</Text>
+</Headline>
+</Head>
+<Body xmlns="http://xml.kishou.go.jp/jmaxml1/body/meteorology1/" xmlns:jmx_eb="http://xml.kishou.go.jp/jmaxml1/elementBasis1/">
+<Warning type="気象警報・注意報（市町村等）">
+<Item>
+<Kind>
+<Name>大雨注意報</Name>
+<Code>10</Code>
+<Status>解除</Status>
+</Kind>
+<Kind>
+<Name>洪水注意報</Name>
+<Code>18</Code>
+<Status>解除</Status>
+</Kind>
+<Area>
+<Name>長岡市</Name>
+<Code>1520200</Code>
+</Area>
+</Item>
+<Item>
+<Kind>
+<Name>発表警報・注意報はなし</Name>
+<Code>00</Code>
+<Status>発表警報・注意報はなし</Status>
+</Kind>
+<Area>
+<Name>新潟市</Name>
+<Code>1510000</Code>
+</Area>
+</Item>
+</Warning>
+</Body>
+</Report>

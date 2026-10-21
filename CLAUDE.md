@@ -5,14 +5,14 @@
 
 ## 技術スタック
 
-> バージョンは実装開始時に確定し、`TBD` を書き換える。
+> 依存パッケージは公開から2週間以上経ったバージョンに固定する（セキュリティ修正は例外）。Terraform は AWS への構築時に確定する。
 
 | 領域 | 採用技術 | バージョン |
 | --- | --- | --- |
-| フロントエンド | Next.js（App Router, `output: 'export'` の静的出力）+ TypeScript | TBD |
-| 地図 | MapLibre GL JS + 国土地理院タイル | TBD |
-| Node.js | `web/.nvmrc` で固定、パッケージ管理は npm | TBD |
-| バックエンド | Go（AWS Lambda, `provided.al2023`, arm64） | TBD（`api/go.mod`） |
+| フロントエンド | Next.js（App Router, `output: 'export'` の静的出力）+ React + TypeScript | Next.js 16.3.8 / React 19.3.0 / TypeScript 5.9.3 |
+| 地図 | MapLibre GL JS + 国土地理院タイル | 6.12.0 |
+| Node.js | `web/.nvmrc` で固定、パッケージ管理は npm | 24.21.0 |
+| バックエンド | Go（AWS Lambda, `provided.al2023`, arm64） | 1.26（toolchain 1.26.10、`api/go.mod`） |
 | API | API Gateway HTTP API + JWT オーソライザ | - |
 | データ | DynamoDB（オンデマンド）、S3 | - |
 | 非同期処理 | SQS（+ DLQ）、EventBridge Scheduler | - |
@@ -23,7 +23,7 @@
 | IaC | Terraform（state は S3 に保存し、`use_lockfile` でロック） | TBD |
 | CI/CD | GitHub Actions（AWS へは OIDC で認証） | - |
 | リージョン | ap-northeast-1（CloudFront 用の証明書のみ us-east-1） | - |
-| API 仕様 | OpenAPI（`api/openapi.yaml`）。Go は oapi-codegen、TS は openapi-typescript + openapi-fetch で生成 | TBD |
+| API 仕様 | OpenAPI（`api/openapi.yaml`）。Go は oapi-codegen、TS は openapi-typescript + openapi-fetch で生成 | oapi-codegen 2.7.2 / openapi-typescript 7.13.0 / openapi-fetch 0.17.0 |
 
 ## テスト・動作検証
 
@@ -96,24 +96,31 @@ compose.yaml   # DynamoDB Local / Mailpit
 
 ## コマンド
 
-> 実装開始後に追記する。
-
 ```sh
-# ローカル環境（DynamoDB Local / Mailpit）
+# ローカル環境（DynamoDB Local :8000 / Mailpit SMTP :1025・画面 :8025）
 docker compose up -d
 
-# api
-go vet ./... && golangci-lint run && go test -race -cover ./... && govulncheck ./...
-go test -tags=integration ./...      # 結合テスト（DynamoDB Local が必要）
-go run ./cmd/local                   # ローカル API サーバー
-go run ./cmd/replay <シナリオ名>     # 災害シナリオの再現
-go run ./cmd/opsctl release status   # リリースの状態（両リージョン）
-go run ./cmd/opsctl dr status        # DR の状態（両リージョン）
+# api（api/ で実行）
+go vet ./... && go test -race -cover ./... && go run golang.org/x/vuln/cmd/govulncheck@v1.1.4 ./...
+go test -tags=integration ./...                  # 結合・認可・シナリオのテスト（DynamoDB Local が必要）
+go test ./internal/jma -update                   # 電文パーサのゴールデンファイルを更新
+go test -tags=integration ./internal/scenario -update   # シナリオの結果のゴールデンファイルを更新
+go generate ./internal/apigen                    # openapi.yaml から Go の型を再生成
+go run -tags local ./cmd/local                   # ローカル API サーバー（http://127.0.0.1:8080/api）
+go run -tags local ./cmd/local -ingest           # 気象庁のフィードを1分ごとに取り込む（外部にアクセスする）
+go run -tags local ./cmd/replay -list            # 災害シナリオの一覧
+go run -tags local ./cmd/replay <シナリオ名>     # 災害シナリオの再現（-reset でローカルのデータを作り直す）
+GEOCODER=static go run -tags local ./cmd/local   # 国土地理院の逆ジオコーダを呼ばずに動かす
+# golangci-lint・opsctl は未導入（AWS への構築時に追加）
 
-# web
+# web（web/ で実行。Node は .nvmrc のバージョン）
+npm ci --ignore-scripts
 npm run lint && npm run typecheck && npm test && npm run build
-npm run dev:mock                     # MSW でモックした API で開発
-npx playwright test                  # E2E（モック API）
+npm run gen:api                      # openapi.yaml から TS の型を再生成
+npm run dev:mock                     # MSW でモックした API で開発（?scenario=heavy-rain などで切り替え）
+npm run dev:local                    # ローカル API サーバー（cmd/local）につないで開発
+npx playwright install chromium webkit   # 初回のみ
+npm run e2e                          # E2E（モック API。build:mock した静的出力を配信してテスト）
 
 # infra
 terraform fmt -check -recursive infra && tflint --recursive --chdir=infra

@@ -30,6 +30,7 @@ web/coverage/
 web/playwright-report/
 web/test-results/
 web/blob-report/
+web/next-env.d.ts
 *.tsbuildinfo
 npm-debug.log*
 

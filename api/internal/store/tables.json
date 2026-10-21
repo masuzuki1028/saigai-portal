@@ -1,0 +1,14 @@
+{
+  "_comment": "DynamoDB のテーブル定義（docs/04_data_model.md 5章）。ローカル・結合テストではこの定義からテーブルを作る。Terraform も同じ定義を読む予定",
+  "tables": [
+    {
+      "name": "app",
+      "attributes": [["PK", "S"], ["SK", "S"], ["GSI1PK", "S"], ["GSI1SK", "S"]],
+      "keySchema": ["PK", "SK"],
+      "gsi": [{ "name": "GSI1", "keySchema": ["GSI1PK", "GSI1SK"] }]
+    },
+    { "name": "events", "attributes": [["PK", "S"], ["SK", "S"]], "keySchema": ["PK", "SK"], "ttl": "ttl" },
+    { "name": "timeline", "attributes": [["PK", "S"], ["SK", "S"]], "keySchema": ["PK", "SK"], "ttl": "ttl" },
+    { "name": "audit", "attributes": [["PK", "S"], ["SK", "S"]], "keySchema": ["PK", "SK"], "ttl": "ttl" }
+  ]
+}

@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Report xmlns="http://xml.kishou.go.jp/jmaxml1/" xmlns:jmx="http://xml.kishou.go.jp/jmaxml1/">
+<Control>
+<Title>震源・震度に関する情報</Title>
+<DateTime>2026-10-19T20:53:28Z</DateTime>
+<Status>通常</Status>
+<EditorialOffice>気象庁本庁</EditorialOffice>
+<PublishingOffice>気象庁</PublishingOffice>
+</Control>
+<Head xmlns="http://xml.kishou.go.jp/jmaxml1/informationBasis1/">
+<Title>震源・震度情報</Title>
+<ReportDateTime>2026-10-20T05:53:00+09:00</ReportDateTime>
+<TargetDateTime>2026-10-20T05:53:00+09:00</TargetDateTime>
+<EventID>20261020055029</EventID>
+<InfoType>発表</InfoType>
+<Serial>1</Serial>
+<InfoKind>地震情報</InfoKind>
+<InfoKindVersion>1.0_1</InfoKindVersion>
+<Headline>
+<Text>２０日０５時５０分ころ、地震がありました。</Text>
+</Headline>
+</Head>
+<Body xmlns="http://xml.kishou.go.jp/jmaxml1/body/seismology1/" xmlns:jmx_eb="http://xml.kishou.go.jp/jmaxml1/elementBasis1/">
+<Earthquake>
+<OriginTime>2026-10-20T05:50:00+09:00</OriginTime>
+<ArrivalTime>2026-10-20T05:50:00+09:00</ArrivalTime>
+<Hypocenter>
+<Area>
+<Name>釧路沖</Name>
+<Code type="震央地名">190</Code>
+<jmx_eb:Coordinate description="北緯４２．４度　東経１４４．７度　深さ　３０ｋｍ" >+42.4+144.7-30000/</jmx_eb:Coordinate>
+</Area>
+</Hypocenter>
+<jmx_eb:Magnitude type="Mj" description="Ｍ４．０">4.0</jmx_eb:Magnitude>
+</Earthquake>
+<Intensity>
+<Observation>
+<CodeDefine>
+<Type xpath="Pref/Code">地震情報／都道府県等</Type>
+<Type xpath="Pref/Area/Code">地震情報／細分区域</Type>
+<Type xpath="Pref/Area/City/Code">気象・地震・火山情報／市町村等</Type>
+<Type xpath="Pref/Area/City/IntensityStation/Code">震度観測点</Type>
+</CodeDefine>
+<MaxInt>2</MaxInt>
+<Pref><Name>北海道</Name><Code>01</Code><MaxInt>2</MaxInt>
+<Area><Name>釧路地方中南部</Name><Code>161</Code><MaxInt>2</MaxInt>
+<City><Name>釧路市</Name><Code>0120600</Code><MaxInt>2</MaxInt>
+<IntensityStation><Name>釧路市黒金町＊</Name><Code>0120620</Code><Int>2</Int></IntensityStation>
+<IntensityStation><Name>釧路市幸町</Name><Code>0120601</Code><Int>1</Int></IntensityStation>
+</City>
+<City><Name>釧路町</Name><Code>0166100</Code><MaxInt>1</MaxInt>
+<IntensityStation><Name>釧路町別保＊</Name><Code>0166131</Code><Int>1</Int></IntensityStation>
+</City>
+<City><Name>浜中町</Name><Code>0166300</Code><MaxInt>1</MaxInt>
+<IntensityStation><Name>浜中町茶内＊</Name><Code>0166321</Code><Int>1</Int></IntensityStation>
+</City>
+<City><Name>標茶町</Name><Code>0166400</Code><MaxInt>1</MaxInt>
+<IntensityStation><Name>標茶町塘路＊</Name><Code>0166421</Code><Int>1</Int></IntensityStation>
+</City>
+<City><Name>白糠町</Name><Code>0166800</Code><MaxInt>1</MaxInt>
+<IntensityStation><Name>白糠町西１条＊</Name><Code>0166820</Code><Int>1</Int></IntensityStation>
+</City>
+</Area>
+</Pref>
+</Observation>
+</Intensity>
+<Comments>
+<ForecastComment codeType="固定付加文">
+<Text>この地震による津波の心配はありません。</Text>
+<Code>0215</Code>
+</ForecastComment>
+<VarComment codeType="固定付加文">
+<Text>＊印は気象庁以外の震度観測点についての情報です。</Text>
+<Code>0262</Code>
+</VarComment>
+</Comments>
+</Body>
+</Report>

@@ -261,6 +261,7 @@ jobs:
 2. `aws s3 sync out/ s3://saigai-<env>-web/ --delete`
    - ハッシュ付きファイル（`_next/static/*`）は長期キャッシュ、HTML は短いキャッシュ
 3. CloudFront の HTML パスのみ無効化（無効化は月1,000パスまで無料）
+   - 静的出力は `/login` → `login.html` のように出力される。同じ名前のディレクトリ（`login/`）もあるため、CloudFront Functions で拡張子のないパスを `.html` に書き換える（ローカルでは `web/scripts/serve-out.mjs` が同じ処理をしている）
 4. S3 バケットはバージョニング有効 → ロールバック時は前バージョンを再配置
 
 ### 6.3 Terraform
