@@ -455,6 +455,9 @@ components:
         tsunamiAreaName:
           type: string
           description: 沿岸の地点が属する津波予報区（例 "新潟県上中下越"）
+        warnAreaCode:
+          type: string
+          description: 警報・注意報の発表区域の5桁のコード。地図で区域を塗るのに使う（/geo/warn/<先頭2桁>.json の code の先頭5桁と一致する区域）
         hazardSettings:
           $ref: "#/components/schemas/HazardSettings"
         currentLevels:
@@ -514,6 +517,9 @@ components:
           format: date-time
         notified:
           type: boolean
+        point:
+          $ref: "#/components/schemas/LatLon"
+          description: 地図に表示する位置（地震の震央など）。ない項目もある
 
     Timeline:
       type: object

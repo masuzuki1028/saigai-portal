@@ -14,9 +14,11 @@ func TestFromMuniCode(t *testing.T) {
 		name, warn, quake string
 	}{
 		{"15202", "長岡市", "15202", "15202"},
-		{"14104", "横浜市中区", "14100", "14104"}, // 政令指定都市の区: 警報は市の単位
-		{"13101", "千代田区", "13101", "13101"},  // 東京23区は区の単位
-		{"1206", "釧路市", "01206", "01206"},    // 先頭の0が落ちたコード
+		{"14104", "横浜市中区", "14100", "14104"},  // 政令指定都市の区: 警報は市の単位
+		{"28108", "神戸市垂水区", "28108", "28108"}, // 神戸市は 2026年3月から区の単位
+		{"34101", "広島市中区", "34101", "34101"},  // 広島市も区の単位
+		{"13101", "千代田区", "13101", "13101"},   // 東京23区は区の単位
+		{"1206", "釧路市", "01206", "01206"},     // 先頭の0が落ちたコード
 	}
 	for _, tt := range tests {
 		a, err := FromMuniCode(tt.code)
@@ -95,6 +97,27 @@ func TestNearestTsunamiZone(t *testing.T) {
 		z, d, ok := NearestTsunamiZone(tt.lat, tt.lon)
 		if ok != tt.coastal || z.Name != tt.zone {
 			t.Errorf("%s: zone=%+v dist=%.1fkm coastal=%v", tt.name, z, d, ok)
+		}
+	}
+}
+
+func TestMuniFromStation(t *testing.T) {
+	tests := []struct{ pref, station, want string }{
+		{"新潟県", "長岡市城内町", "15202"},
+		{"茨城県", "茨城古河市下大野", "08204"}, // 同じ名前の市がある場合は都道府県名が付く
+		{"茨城県", "つくば市小茎", "08220"},
+		{"神奈川県", "横浜中区山手町", "14104"}, // 政令指定都市の区は「市」が省かれる
+		{"新潟県", "新潟中央区関屋", "15103"},  // 市の名前が都道府県名と同じ
+		{"静岡県", "静岡葵区追手町", "22101"},
+		{"千葉県", "千葉中央区中央港", "12101"},
+		{"北海道", "釧路市黒金町＊", "01206"},
+		{"東京都", "千代田区大手町", "13101"},
+		{"新潟県", "存在しない町", ""},
+	}
+	for _, tt := range tests {
+		got, ok := MuniFromStation(tt.pref, tt.station)
+		if got != tt.want || ok != (tt.want != "") {
+			t.Errorf("MuniFromStation(%q, %q) = %q, %v; want %q", tt.pref, tt.station, got, ok, tt.want)
 		}
 	}
 }

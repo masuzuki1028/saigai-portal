@@ -110,3 +110,29 @@ test("利用規約・プライバシーポリシー・security.txt を表示で�
   expect(res.ok()).toBe(true);
   expect(await res.text()).toContain("Contact: https://github.com/masuzuki1028/saigai-portal/security/advisories/new");
 });
+
+test("地図に、警報の発表区域を発表中のレベルで塗る", async ({ page }) => {
+  // MapLibre の Worker が読み込めないと、地図の図形（区域の塗り・半径の円）が描画されない
+  const errors: string[] = [];
+  page.on("console", (m) => m.type() === "error" && errors.push(m.text()));
+  await login(page, "heavy-rain");
+  await page.getByRole("link", { name: /実家/ }).click();
+  await page.getByRole("link", { name: "地図" }).click();
+  const legend = page.getByRole("region", { name: "地図に表示している情報" });
+  await expect(legend).toContainText("発表区域: 新潟県長岡市");
+  await expect(legend).toContainText("大雨警報");
+  await expect(page.locator(".maplibregl-canvas")).toBeVisible();
+  await expect(page.locator('[data-loaded="true"]')).toBeVisible();
+  await expectNoSeriousA11yViolations(page);
+  await page.waitForTimeout(500); // 塗りの描画を待ってから撮影する（目視の確認用）
+  await page.screenshot({ path: "test-results/map-heavy-rain.png" });
+  expect(errors).toEqual([]);
+});
+
+test("地図に、地震の震央のピンを表示する", async ({ page }) => {
+  await login(page, "earthquake");
+  await page.getByRole("link", { name: /実家/ }).click();
+  await page.getByRole("link", { name: "地図" }).click();
+  await expect(page.getByRole("region", { name: "地図に表示している情報" })).toContainText("地震（長岡市 震度6弱）の震央");
+  await expect(page.locator(".maplibregl-marker")).toHaveCount(2); // 地点と震央
+});

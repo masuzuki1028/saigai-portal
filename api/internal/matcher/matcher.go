@@ -40,6 +40,8 @@ type Store interface {
 	PutAffected(ctx context.Context, a store.Affected) error
 	ListAffected(ctx context.Context, group string) ([]store.Affected, error)
 	CancelTimelineItem(ctx context.Context, locID, itemID string, issuedAt time.Time) error
+	PutQuakeKey(ctx context.Context, eventID, quakeKey string) error
+	GetQuakeKey(ctx context.Context, eventID string) (string, error)
 }
 
 // Matcher は Event を地点に突き合わせる。Notify には地点ごとにまとめた通知の依頼を渡す
@@ -82,6 +84,11 @@ func (m *Matcher) Match(ctx context.Context, ev *domain.Event) (Result, error) {
 }
 
 func (m *Matcher) match(ctx context.Context, ev *domain.Event) (Result, error) {
+	if ev.Kind == domain.EventEarthquake && ev.Quake != nil {
+		if err := m.resolveQuakeKey(ctx, ev); err != nil {
+			return Result{}, err
+		}
+	}
 	if ev.InfoType == "取消" {
 		g := groupOf(ev)
 		if g == "" {
@@ -107,11 +114,33 @@ func (m *Matcher) match(ctx context.Context, ev *domain.Event) (Result, error) {
 	}
 }
 
-// groupOf は、続報・取消報で共通の ID（地震・津波）。それ以外の電文は空。
+// resolveQuakeKey は地震の識別子を決める。発生時刻のある情報では、地震の ID との対応を記録する。
+// 取消報など発生時刻のない情報では、記録から識別子を引く（見つからなければ地震の ID を使う）。
+func (m *Matcher) resolveQuakeKey(ctx context.Context, ev *domain.Event) error {
+	q := ev.Quake
+	if q.Key != "" {
+		if q.EventID != "" {
+			return m.Store.PutQuakeKey(ctx, q.EventID, q.Key)
+		}
+		return nil
+	}
+	k, err := m.Store.GetQuakeKey(ctx, q.EventID)
+	if err != nil {
+		return err
+	}
+	if k == "" {
+		k = "id:" + q.EventID
+	}
+	q.Key = k
+	return nil
+}
+
+// groupOf は、続報・取消報で共通の識別子（地震・津波）。それ以外の電文は空。
+// 地震は情報源によらない識別子（発生時刻＋震央地名）にし、気象庁 XML と P2P地震情報で同じ地震をまとめる。
 func groupOf(ev *domain.Event) string {
 	switch {
-	case ev.Kind == domain.EventEarthquake && ev.Quake != nil && ev.Quake.EventID != "":
-		return "quake:" + ev.Quake.EventID
+	case ev.Kind == domain.EventEarthquake && ev.Quake != nil && ev.Quake.Key != "":
+		return "quake:" + ev.Quake.Key
 	case ev.Kind == domain.EventTsunami && ev.Tsunami != nil && ev.Tsunami.EventID != "":
 		return "tsunami:" + ev.Tsunami.EventID
 	}
@@ -128,7 +157,7 @@ func (m *Matcher) cancel(ctx context.Context, ev *domain.Event, group string) (R
 	}
 	hz, stKey := domain.Tsunami, string(domain.Tsunami)
 	if ev.Kind == domain.EventEarthquake {
-		hz, stKey = domain.Earthquake, "Q#"+ev.Quake.EventID
+		hz, stKey = domain.Earthquake, "Q#"+ev.Quake.Key
 	}
 	notified := map[string]store.Affected{}
 	reset := map[string]bool{}
@@ -345,7 +374,7 @@ func (m *Matcher) matchQuake(ctx context.Context, ev *domain.Event) (Result, err
 // 訂正報では震度が下がる場合も反映し、「訂正」の項目を出す。通知済みの地点には訂正も通知する。
 func (m *Matcher) applyQuake(ctx context.Context, ev *domain.Event, e store.AreaEntry, c domain.CityIntensity, res *Result) error {
 	set := e.HazardSettings.Earthquake
-	stKey := "Q#" + ev.Quake.EventID
+	stKey := "Q#" + ev.Quake.Key
 	old, err := m.Store.GetState(ctx, e.LocationID, stKey)
 	if err != nil {
 		return err
@@ -379,7 +408,8 @@ func (m *Matcher) applyQuake(ctx context.Context, ev *domain.Event, e store.Area
 	item := store.TimelineItem{
 		ID: itemID(ev.ID, e.LocationID, string(c.MaxInt)), Kind: "official", EventID: ev.ID, Hazard: domain.Earthquake,
 		Severity: max(c.MaxInt.Severity(), domain.SeverityInfo), Reliability: "official", Title: title, Summary: summary, Status: status,
-		Source: sourceJMA, SourceURL: "https://www.jma.go.jp/bosai/map.html#contents=earthquake_map", IssuedAt: ev.IssuedAt, Notified: notify,
+		Source: sourceLabel(ev), SourceURL: sourceURL(ev, "https://www.jma.go.jp/bosai/map.html#contents=earthquake_map"), IssuedAt: ev.IssuedAt, Notified: notify,
+		Point: ev.Quake.Epicenter,
 	}
 	return m.emit(ctx, ev, e, item, domain.Decision{AddItem: display, Status: status, Notify: notify}, res)
 }
@@ -410,6 +440,21 @@ func (m *Matcher) emit(ctx context.Context, ev *domain.Event, e store.AreaEntry,
 }
 
 var jst = time.FixedZone("JST", 9*60*60)
+
+// sourceLabel は出典の表示。P2P地震情報から受け取った情報も、発表元は気象庁であることを示す。
+func sourceLabel(ev *domain.Event) string {
+	if ev.Source == "p2p_quake" {
+		return "気象庁（P2P地震情報経由）"
+	}
+	return sourceJMA
+}
+
+func sourceURL(ev *domain.Event, jmaURL string) string {
+	if ev.Source == "p2p_quake" {
+		return "https://www.p2pquake.net/"
+	}
+	return jmaURL
+}
 
 func statusSuffix(s domain.ItemStatus) string {
 	if s == domain.StatusCorrected {

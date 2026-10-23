@@ -4,6 +4,7 @@ import "maplibre-gl/dist/maplibre-gl.css";
 
 import { useEffect, useRef } from "react";
 
+import { loadMaplibre } from "./maplibre";
 import { gsiStyle } from "./style";
 
 type LatLon = { lat: number; lon: number };
@@ -24,7 +25,7 @@ export function MapPicker({ value, onChange }: Props) {
     if (!ref.current) return;
     let map: import("maplibre-gl").Map | undefined;
     let cancelled = false;
-    void import("maplibre-gl").then(({ Map, Marker, NavigationControl }) => {
+    void loadMaplibre().then(({ Map, Marker, NavigationControl }) => {
       if (cancelled || !ref.current) return;
       const c = initial.current ?? JAPAN_CENTER;
       map = new Map({ container: ref.current, style: gsiStyle, center: [c.lon, c.lat], zoom: initial.current ? 13 : 4.5, attributionControl: { compact: false } });

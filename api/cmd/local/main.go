@@ -23,7 +23,7 @@ import (
 
 func main() {
 	addr := flag.String("addr", "127.0.0.1:8080", "待ち受けるアドレス")
-	ingest := flag.Bool("ingest", false, "気象庁のフィードを1分ごとに取り込む（外部の気象庁サーバーにアクセスする）")
+	ingest := flag.Bool("ingest", false, "気象庁のフィードと P2P地震情報を1分ごとに取り込む（外部のサーバーにアクセスする）")
 	flag.Parse()
 
 	log := logx.New()
@@ -57,14 +57,19 @@ func main() {
 	}
 }
 
-// poll は気象庁のフィードを約1分ごとに取得する。本番の EventBridge Scheduler の代わり。
+// poll は気象庁のフィードと P2P地震情報を約1分ごとに取得する。本番の EventBridge Scheduler の代わり。
 func poll(ctx context.Context, app *localenv.App, log *slog.Logger) {
 	for {
 		st, err := app.Pipeline.Ingester.Poll(ctx)
 		if err != nil {
-			log.Error("ingest", "err", err)
+			log.Error("ingest-jma", "err", err)
 		} else {
-			log.Info("ingest", "new", st.New, "skipped", st.Skipped, "failed", st.Failed)
+			log.Info("ingest-jma", "new", st.New, "skipped", st.Skipped, "failed", st.Failed)
+		}
+		if n, err := app.Pipeline.P2P.Poll(ctx); err != nil {
+			log.Error("ingest-quake", "err", err)
+		} else {
+			log.Info("ingest-quake", "new", n)
 		}
 		select {
 		case <-ctx.Done():

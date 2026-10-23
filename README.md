@@ -89,7 +89,7 @@ npm run dev:local                          # http://localhost:3000 → alice で
 ```
 
 - 通知のメールは Mailpit（http://localhost:8025）で確認できます
-- シナリオの一覧は `go run -tags local ./cmd/replay -list`（大雨・土砂災害警戒情報・地震・津波）
+- シナリオの一覧は `go run -tags local ./cmd/replay -list`（大雨・土砂災害警戒情報・地震・津波・訂正と取消・P2P地震情報との重複排除）
 - API なしで画面だけを動かす場合は `npm run dev:mock`（`?scenario=heavy-rain` などでデータを切り替え）
 - テストのコマンドは [CLAUDE.md](CLAUDE.md) の「コマンド」を参照してください
 

@@ -544,3 +544,45 @@ legend {
   text-align: left;
   vertical-align: top;
 }
+
+/* 地図の凡例 */
+.map-legend ul {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+  font-size: 0.9rem;
+}
+
+.legend-swatch {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  vertical-align: middle;
+  border: 1px solid var(--border);
+}
+
+.legend-location {
+  background: #2563eb;
+  border-radius: 50%;
+}
+
+.legend-pin {
+  background: #b91c1c;
+  border-radius: 50%;
+}
+
+.level-fill-0,
+.level-fill-1 {
+  background: #cbd5e1;
+}
+.level-fill-2 {
+  background: #eab308;
+}
+.level-fill-3 {
+  background: #ea580c;
+}
+.level-fill-4 {
+  background: #7e22ce;
+}

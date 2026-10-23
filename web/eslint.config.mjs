@@ -4,7 +4,7 @@ import security from "eslint-plugin-security";
 import tseslint from "typescript-eslint";
 
 export default tseslint.config(
-  { ignores: [".next/**", "out/**", "public/mockServiceWorker.js", "src/lib/api/schema.d.ts", "playwright-report/**", "test-results/**"] },
+  { ignores: [".next/**", "out/**", "public/mockServiceWorker.js", "public/maplibre/**", "src/lib/api/schema.d.ts", "playwright-report/**", "test-results/**"] },
   js.configs.recommended,
   ...tseslint.configs.recommended,
   security.configs.recommended,

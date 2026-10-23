@@ -1,3 +1,4 @@
+import { http, HttpResponse } from "msw";
 import { setupWorker } from "msw/browser";
 
 import { loadScenario } from "./db";
@@ -20,6 +21,13 @@ export async function startMockWorker() {
     /* 保存できない環境では URL の指定だけを使う */
   }
   loadScenario(name && name in scenarios ? name : "normal");
-  const worker = setupWorker(...handlers);
+  // 自動テスト（Playwright）のブラウザでは、地理院タイルをダミーの画像に差し替える。
+  // Service Worker を経由する通信は Playwright の page.route で止められないため、ここで止める（CI から外部のタイルサーバーを呼ばない）
+  const extra = navigator.webdriver ? [blankTiles] : [];
+  const worker = setupWorker(...extra, ...handlers);
   await worker.start({ onUnhandledFrame: "bypass", quiet: true });
 }
+
+// 1x1 の透明な PNG
+const PNG = Uint8Array.from(atob("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII="), (c) => c.charCodeAt(0));
+const blankTiles = http.get("https://cyberjapandata.gsi.go.jp/*", () => new HttpResponse(PNG, { headers: { "Content-Type": "image/png" } }));

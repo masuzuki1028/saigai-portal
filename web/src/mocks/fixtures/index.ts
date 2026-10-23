@@ -66,7 +66,7 @@ export const scenarios: Record<ScenarioName, ScenarioData> = {
   empty: { label: "地点なし", locations: [], timelines: {} },
   normal: {
     label: "平常時",
-    locations: [location(HOME, "自宅", "千代田区", 35.6812, 139.7671), location(PARENTS, "実家", "長岡市", 37.4462, 138.8512)],
+    locations: [location(HOME, "自宅", "千代田区", 35.6812, 139.7671, { warnAreaCode: "13101" }), location(PARENTS, "実家", "長岡市", 37.4462, 138.8512, { warnAreaCode: "15202" })],
     timelines: {
       [HOME]: [],
       [PARENTS]: [
@@ -79,6 +79,7 @@ export const scenarios: Record<ScenarioName, ScenarioData> = {
     label: "大雨警報の発表中",
     locations: [
       location(PARENTS, "実家", "長岡市", 37.4462, 138.8512, {
+        warnAreaCode: "15202",
         currentLevels: [
           { hazard: "rain", severity: 3, title: "大雨警報" },
           { hazard: "flood", severity: 3, title: "洪水警報" },
@@ -127,6 +128,7 @@ export const scenarios: Record<ScenarioName, ScenarioData> = {
     label: "震度6弱の地震",
     locations: [
       location(PARENTS, "実家", "長岡市", 37.4462, 138.8512, {
+        warnAreaCode: "15202",
         currentLevels: [{ hazard: "earthquake", severity: 4, title: "地震（長岡市 震度6弱）" }],
       }),
     ],
@@ -136,11 +138,13 @@ export const scenarios: Record<ScenarioName, ScenarioData> = {
           hazard: "earthquake", severity: 4, title: "地震（長岡市 震度6弱）", notified: true,
           summary: "8月1日 03時12分 ころ、新潟県中越地方 を震源とする地震がありました（Ｍ６．５）。長岡市 で震度6弱を観測しました。",
           sourceUrl: "https://www.jma.go.jp/bosai/map.html#contents=earthquake_map",
+          point: { lat: 37.3, lon: 138.9 },
         }),
         item("q1", "2026-08-01T03:15:00+09:00", {
           hazard: "earthquake", severity: 3, title: "地震（長岡市 震度5強）", notified: true,
           summary: "8月1日 03時12分 ころ、新潟県中越地方 を震源とする地震がありました（Ｍ６．５）。長岡市 で震度5強を観測しました。",
           sourceUrl: "https://www.jma.go.jp/bosai/map.html#contents=earthquake_map",
+          point: { lat: 37.3, lon: 138.9 },
         }),
       ],
     },

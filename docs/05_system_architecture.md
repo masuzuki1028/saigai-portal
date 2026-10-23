@@ -126,7 +126,7 @@ flowchart TB
 | --- | --- | --- | --- |
 | `api` | API Gateway | REST API 全般（1バイナリ内でルーティング） | 50（予約なし・上限のみ） |
 | `ingest-jma` | Scheduler 1分 | 気象庁XMLフィード（Atom）を取得し、新規電文を解析・正規化して `events` に保存、`match-queue` へ投入 | 1 |
-| `ingest-quake` | Scheduler 1分 | P2P地震情報 API から地震・津波情報を取得（気象庁XMLの補完・冗長化） | 1 |
+| `ingest-quake` | Scheduler 1分 | P2P地震情報 API から地震情報を取得（気象庁XMLの補完・冗長化）。観測点の名前から市区町村を引き、同じ地震は発生時刻＋震央地名で識別して重複させない。津波は気象庁 XML だけで扱う | 1 |
 | `ingest-sns` | Scheduler 5分（Phase 2） | 警報級が出ているエリアの地名＋キーワードで Threads / Bluesky を検索 | 1 |
 | `matcher` | SQS | イベントのエリアコード → AreaIndex を引き、しきい値判定 → `timeline` 書き込み、通知対象を `notify-queue` へ | 10 |
 | `notifier` | SQS | 通知先ごとに送信。失敗はリトライ → DLQ | 10 |
@@ -180,6 +180,7 @@ sequenceDiagram
 | 国土地理院 逆ジオコーダ | REST | 地点登録時のみ | 結果は保存し、繰り返し呼ばない |
 | 国土地理院 住所検索 | REST（ブラウザから直接） | 利用者が「住所で探す」を使ったときのみ | 入力した住所はこちらのサーバーを通らず、保存もしない |
 | 気象庁 津波予報区の GIS データ | 同梱（`api/internal/area/tsunami.json`） | データ更新時に手動で再生成 | 沿岸の地点の判定に使う |
+| 気象庁 市町村等（気象警報等）の GIS データ | 同梱（`web/public/geo/warn/*.json`、`api/internal/area/warnkeys.json`） | データ更新時に手動で再生成（`genwarnmap`） | 地図の区域の塗りと、政令指定都市の発表単位の判定に使う。約 230MB を間引いて都道府県ごとに分け、合計約 3MB |
 
 > **リアルタイム性の割り切り**: 定期取得のため、発表から表示まで最大1〜2分の遅れがある。緊急地震速報のような秒単位の速報は対象外とし、画面と規約に明記する。
 

@@ -17,7 +17,8 @@ type Area struct {
 	MuniCode string // 5桁の市区町村コード（政令指定都市は区のコード）
 	Name     string // 例: 横浜市中区
 	Pref     string
-	// WarnKey は警報・注意報の突き合わせキー。政令指定都市は市の単位で発表されるため市のコードにする
+	// WarnKey は警報・注意報の突き合わせキー。政令指定都市は、市の単位で発表される市（横浜市など）は市のコード、
+	// 区の単位で発表される市（神戸市・広島市）は区のコードにする（warnkeys.json で判定）
 	WarnKey string
 	// QuakeKey は地震情報（市町村ごとの震度）の突き合わせキー。政令指定都市は区の単位
 	QuakeKey string
@@ -42,6 +43,24 @@ type muni struct {
 	City string `json:"city"`
 }
 
+//go:embed warnkeys.json
+var warnKeysJSON []byte
+
+// warnKeys は気象庁の警報・注意報の発表区域（5桁）。genwarnmap で生成する。
+var warnKeys = func() map[string]bool {
+	var d struct {
+		Keys []string `json:"keys"`
+	}
+	if err := json.Unmarshal(warnKeysJSON, &d); err != nil {
+		panic(fmt.Sprintf("warnkeys.json: %v", err))
+	}
+	m := map[string]bool{}
+	for _, k := range d.Keys {
+		m[k] = true
+	}
+	return m
+}()
+
 var munis = func() map[string]muni {
 	m := map[string]muni{}
 	if err := json.Unmarshal(muniJSON, &m); err != nil {
@@ -59,8 +78,9 @@ func FromMuniCode(code string) (Area, error) {
 	if !ok {
 		return Area{}, fmt.Errorf("%w: %s", ErrNotFound, code)
 	}
+	// 区の単位で発表されていれば区、そうでなければ市の単位（政令指定都市）
 	warn := code
-	if m.City != "" {
+	if !warnKeys[code] && m.City != "" && warnKeys[m.City] {
 		warn = m.City
 	}
 	return Area{MuniCode: code, Name: m.Name, Pref: m.Pref, WarnKey: warn, QuakeKey: code}, nil

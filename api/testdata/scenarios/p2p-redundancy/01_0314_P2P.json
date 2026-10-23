@@ -1,0 +1,54 @@
+[
+ {
+  "code": 551,
+  "id": "scenario-p2p-0001",
+  "comments": {
+   "freeFormComment": ""
+  },
+  "earthquake": {
+   "domesticTsunami": "None",
+   "foreignTsunami": "Unknown",
+   "hypocenter": {
+    "depth": 10,
+    "latitude": 37.3,
+    "longitude": 138.9,
+    "magnitude": 6.5,
+    "name": "新潟県中越地方"
+   },
+   "maxScale": 50,
+   "time": "2026/08/01 03:12:00"
+  },
+  "issue": {
+   "correct": "None",
+   "source": "気象庁",
+   "time": "2026/08/01 03:14:30",
+   "type": "DetailScale"
+  },
+  "points": [
+   {
+    "addr": "長岡市幸町",
+    "isArea": false,
+    "pref": "新潟県",
+    "scale": 50
+   },
+   {
+    "addr": "長岡市城内町",
+    "isArea": false,
+    "pref": "新潟県",
+    "scale": 45
+   },
+   {
+    "addr": "新潟中央区関屋",
+    "isArea": false,
+    "pref": "新潟県",
+    "scale": 40
+   },
+   {
+    "addr": "中越",
+    "isArea": true,
+    "pref": "新潟県",
+    "scale": 50
+   }
+  ]
+ }
+]

@@ -29,7 +29,21 @@ export function circlePolygon(lat: number, lon: number, radiusM: number, steps =
   return { type: "Feature", properties: {}, geometry: { type: "Polygon", coordinates: [coords] } };
 }
 
-/** 半径に合わせた初期のズーム */
-export function zoomForRadius(radiusM: number): number {
-  return radiusM <= 1000 ? 14 : radiusM <= 3000 ? 12.5 : radiusM <= 5000 ? 11.8 : 10.8;
+/** 地図の塗りの色（レベル別）。画面の CSS の色（globals.css）と合わせる */
+export const levelFill: Record<number, string> = {
+  0: "#64748b",
+  1: "#64748b",
+  2: "#eab308",
+  3: "#ea580c",
+  4: "#7e22ce",
+};
+
+/** 中心と半径（m）の円が収まる範囲 [[西, 南], [東, 北]] */
+export function circleBounds(lat: number, lon: number, radiusM: number): [[number, number], [number, number]] {
+  const dLat = radiusM / 111_320;
+  const dLon = radiusM / (111_320 * Math.cos((lat * Math.PI) / 180));
+  return [
+    [lon - dLon, lat - dLat],
+    [lon + dLon, lat + dLat],
+  ];
 }

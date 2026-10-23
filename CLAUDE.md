@@ -9,7 +9,7 @@
 
 | 領域 | 採用技術 | バージョン |
 | --- | --- | --- |
-| フロントエンド | Next.js（App Router, `output: 'export'` の静的出力）+ React + TypeScript | Next.js 16.3.8 / React 19.3.0 / TypeScript 5.9.3 |
+| フロントエンド | Next.js（App Router, `output: 'export'` の静的出力）+ React + TypeScript | Next.js 16.4.2（セキュリティ修正のため2週間の例外）/ React 19.3.0 / TypeScript 5.9.3 |
 | 地図 | MapLibre GL JS + 国土地理院タイル | 6.12.0 |
 | Node.js | `web/.nvmrc` で固定、パッケージ管理は npm | 24.21.0 |
 | バックエンド | Go（AWS Lambda, `provided.al2023`, arm64） | 1.26（toolchain 1.26.10、`api/go.mod`） |
@@ -108,7 +108,7 @@ go test ./internal/jma -update                   # 電文パーサのゴール�
 go test -tags=integration ./internal/scenario -update   # シナリオの結果のゴールデンファイルを更新
 go generate ./internal/apigen                    # openapi.yaml から Go の型を再生成
 go run -tags local ./cmd/local                   # ローカル API サーバー（http://127.0.0.1:8080/api）
-go run -tags local ./cmd/local -ingest           # 気象庁のフィードを1分ごとに取り込む（外部にアクセスする）
+go run -tags local ./cmd/local -ingest           # 気象庁のフィードと P2P地震情報を1分ごとに取り込む（外部にアクセスする）
 go run -tags local ./cmd/replay -list            # 災害シナリオの一覧
 go run -tags local ./cmd/replay <シナリオ名>     # 災害シナリオの再現（-reset でローカルのデータを作り直す）
 GEOCODER=static go run -tags local ./cmd/local   # 国土地理院の逆ジオコーダを呼ばずに動かす

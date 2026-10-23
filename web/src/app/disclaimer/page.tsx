@@ -24,7 +24,14 @@ export default function Page() {
           、市区町村の判定: 国土地理院 逆ジオコーダ、住所検索: 国土地理院 住所検索
         </li>
         <li>
-          津波予報区の判定: 気象庁 防災情報XMLで用いるコードが示す地域の GIS データ（津波予報区）を加工して作成
+          地震の情報の一部:{" "}
+          <a href="https://www.p2pquake.net/" target="_blank" rel="noopener noreferrer">
+            P2P地震情報
+          </a>
+          （気象庁の発表を配信）
+        </li>
+        <li>
+          津波予報区の判定・地図の発表区域: 気象庁 防災情報XMLで用いるコードが示す地域の GIS データ（津波予報区、市町村等（気象警報等））を加工して作成
         </li>
       </ul>
       <Link href="/">トップへ</Link>

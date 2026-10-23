@@ -14,7 +14,7 @@ vi.mock("next/navigation", () => ({
 
 // MapLibre GL JS は WebGL が必要なため、テストではモックに差し替える（docs/08 4.1）
 vi.mock("@/components/map/MapView", () => ({
-  MapView: ({ label }: { label?: string }) => <div role="img" aria-label={label ?? "地図"} />,
+  MapView: ({ label }: { label?: string }) => <div role="region" aria-label={label ?? "地図"} />,
 }));
 vi.mock("@/components/map/MapPicker", () => ({
   MapPicker: ({ onChange }: { onChange: (c: { lat: number; lon: number }) => void }) => (

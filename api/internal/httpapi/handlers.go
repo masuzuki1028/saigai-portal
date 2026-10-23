@@ -234,6 +234,9 @@ func (s *Server) GetTimeline(ctx context.Context, req apigen.GetTimelineRequestO
 			u := it.SourceURL
 			ti.SourceUrl = &u
 		}
+		if it.Point != nil {
+			ti.Point = &apigen.LatLon{Lat: it.Point.Lat, Lon: it.Point.Lon}
+		}
 		out.Items = append(out.Items, ti)
 	}
 	if next != "" {
@@ -337,6 +340,10 @@ func (s *Server) toAPI(ctx context.Context, l store.Location) (apigen.Location, 
 	if l.TsunamiName != "" {
 		n := l.TsunamiName
 		out.TsunamiAreaName = &n
+	}
+	if l.WarnKey != "" {
+		w := l.WarnKey
+		out.WarnAreaCode = &w
 	}
 	if len(l.AddressEnc) > 0 {
 		addr, err := s.Sealer.Open(ctx, l.AddressEnc, []byte(l.ID))

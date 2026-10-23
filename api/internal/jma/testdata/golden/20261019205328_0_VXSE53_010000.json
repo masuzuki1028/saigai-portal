@@ -10,10 +10,15 @@
   "Warnings": null,
   "Quake": {
     "EventID": "20261020055029",
+    "Key": "202610200550|釧路沖",
     "Serial": "1",
     "OriginTime": "2026-10-20T05:50:00+09:00",
     "Hypocenter": "釧路沖",
     "Magnitude": "Ｍ４．０",
+    "Epicenter": {
+      "Lat": 42.4,
+      "Lon": 144.7
+    },
     "MaxInt": "2",
     "Cities": [
       {

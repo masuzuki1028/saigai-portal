@@ -41,7 +41,13 @@ func Load(dir string) (Scenario, []string, error) {
 	if err := json.Unmarshal(b, &sc); err != nil {
 		return sc, nil, err
 	}
-	files, err := filepath.Glob(filepath.Join(dir, "*.xml"))
+	// 電文（*.xml）と P2P地震情報の履歴（*_P2P.json）を、ファイル名の順（時刻順）に流す
+	xmls, err := filepath.Glob(filepath.Join(dir, "*.xml"))
+	if err != nil {
+		return sc, nil, err
+	}
+	jsons, err := filepath.Glob(filepath.Join(dir, "*_P2P.json"))
+	files := append(xmls, jsons...)
 	sort.Strings(files)
 	return sc, files, err
 }
@@ -81,6 +87,16 @@ func Run(ctx context.Context, p *pipeline.Pipeline, files []string) (string, err
 		data, err := os.ReadFile(f) //nolint:gosec // Load で列挙したシナリオの電文を読む
 		if err != nil {
 			return "", err
+		}
+		if strings.HasSuffix(f, "_P2P.json") {
+			n, err := p.P2P.Ingest(ctx, data)
+			if err != nil {
+				return "", fmt.Errorf("%s: %w", f, err)
+			}
+			if n == 0 {
+				fmt.Fprintf(&out, "## %s（取り込み済みのためスキップ）\n", filepath.Base(f))
+			}
+			continue
 		}
 		var st ingest.Stats
 		// 電文の ID はファイル名にする（同じシナリオを流し直しても重複して取り込まない）

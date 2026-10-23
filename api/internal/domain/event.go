@@ -65,13 +65,32 @@ type WarningKind struct {
 
 // Quake は地震の震源と市町村ごとの震度。
 type Quake struct {
-	EventID    string // 気象庁の地震の ID（同じ地震の続報で共通）
+	EventID string // 情報源の地震の ID（同じ地震の続報で共通）
+	// Key は情報源によらない地震の識別子（発生時刻（分）＋震央地名）。気象庁 XML と P2P地震情報で
+	// 同じ地震を二重に扱わないために使う。取消報など発生時刻がない電文では空
+	Key        string
 	Serial     string
 	OriginTime time.Time
 	Hypocenter string // 震央地名
 	Magnitude  string // 表示用（例: M4.0）
-	MaxInt     Intensity
-	Cities     []CityIntensity
+	// Epicenter は震央の位置（地図のピン用）。不明なら nil
+	Epicenter *LatLon
+	MaxInt    Intensity
+	Cities    []CityIntensity
+}
+
+// LatLon は緯度・経度。
+type LatLon struct {
+	Lat float64 `dynamodbav:"lat"`
+	Lon float64 `dynamodbav:"lon"`
+}
+
+// QuakeKey は発生時刻（日本時間の分）と震央地名から地震の識別子を作る。
+func QuakeKey(origin time.Time, hypocenter string) string {
+	if origin.IsZero() {
+		return ""
+	}
+	return origin.In(time.FixedZone("JST", 9*60*60)).Format("200601021504") + "|" + hypocenter
 }
 
 // CityIntensity は市町村ごとの最大震度。

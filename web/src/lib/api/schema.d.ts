@@ -228,6 +228,8 @@ export interface components {
             isCoastal: boolean;
             /** @description 沿岸の地点が属する津波予報区（例 "新潟県上中下越"） */
             tsunamiAreaName?: string;
+            /** @description 警報・注意報の発表区域の5桁のコード。地図で区域を塗るのに使う（/geo/warn/<先頭2桁>.json の code の先頭5桁と一致する区域） */
+            warnAreaCode?: string;
             hazardSettings: components["schemas"]["HazardSettings"];
             /** @description 現在発表中の情報（種別ごとの最大レベル） */
             currentLevels: components["schemas"]["CurrentLevel"][];
@@ -261,6 +263,8 @@ export interface components {
             /** Format: date-time */
             issuedAt: string;
             notified?: boolean;
+            /** @description 地図に表示する位置（地震の震央など）。ない項目もある */
+            point?: components["schemas"]["LatLon"];
         };
         Timeline: {
             items: components["schemas"]["TimelineItem"][];

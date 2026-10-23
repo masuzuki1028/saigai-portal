@@ -18,6 +18,7 @@ import (
 	"encoding/xml"
 	"errors"
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
@@ -127,7 +128,8 @@ type report struct {
 			OriginTime string `xml:"OriginTime"`
 			Hypocenter struct {
 				Area struct {
-					Name string `xml:"Name"`
+					Name       string `xml:"Name"`
+					Coordinate string `xml:"Coordinate"`
 				} `xml:"Area"`
 			} `xml:"Hypocenter"`
 			Magnitude struct {
@@ -286,6 +288,28 @@ func parseTsunami(r *report) *domain.TsunamiInfo {
 	return t
 }
 
+// parseCoordinate は "+42.4+144.7-30000/"（緯度・経度・深さ）の形式から緯度・経度を取り出す。
+func parseCoordinate(s string) *domain.LatLon {
+	s = strings.TrimSuffix(strings.TrimSpace(s), "/")
+	var nums []float64
+	for i := 0; i < len(s); {
+		j := i + 1
+		for j < len(s) && s[j] != '+' && s[j] != '-' {
+			j++
+		}
+		v, err := strconv.ParseFloat(s[i:j], 64)
+		if err != nil {
+			return nil
+		}
+		nums = append(nums, v)
+		i = j
+	}
+	if len(nums) < 2 {
+		return nil
+	}
+	return &domain.LatLon{Lat: nums[0], Lon: nums[1]}
+}
+
 func isActive(code, status string) bool {
 	if code == "00" {
 		return false
@@ -323,7 +347,9 @@ func parseQuake(r *report) (*domain.Quake, error) {
 			return nil, fmt.Errorf("parse OriginTime: %w", err)
 		}
 		q.OriginTime = ot
+		q.Key = domain.QuakeKey(ot, q.Hypocenter)
 	}
+	q.Epicenter = parseCoordinate(r.Body.Earthquake.Hypocenter.Area.Coordinate)
 	for _, p := range r.Body.Intensity.Observation.Prefs {
 		for _, a := range p.Areas {
 			for _, c := range a.Cities {

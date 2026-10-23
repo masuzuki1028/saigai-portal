@@ -22,7 +22,7 @@ linters:
       - path: _test\.go
         linters: [gosec, noctx]
       # データを生成する手動のツール
-      - path: internal/area/gen(muni|tsunami)/
+      - path: internal/area/(gen(muni|tsunami|warnmap)|shpfile)/
         linters: [gosec, errcheck]
 formatters:
   enable:

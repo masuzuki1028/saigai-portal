@@ -9,6 +9,9 @@ const port = Number(process.argv[2] ?? 3000);
 const types = {
   ".html": "text/html; charset=utf-8",
   ".js": "text/javascript; charset=utf-8",
+  // MapLibre の Worker（.mjs）は JavaScript の Content-Type でないと読み込めない
+  ".mjs": "text/javascript; charset=utf-8",
+  ".map": "application/json",
   ".css": "text/css; charset=utf-8",
   ".json": "application/json",
   ".svg": "image/svg+xml",

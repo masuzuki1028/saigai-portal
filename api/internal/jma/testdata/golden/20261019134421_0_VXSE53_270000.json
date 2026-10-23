@@ -10,10 +10,15 @@
   "Warnings": null,
   "Quake": {
     "EventID": "20261019224143",
+    "Key": "202610192241|沖縄本島近海",
     "Serial": "1",
     "OriginTime": "2026-10-19T22:41:00+09:00",
     "Hypocenter": "沖縄本島近海",
     "Magnitude": "Ｍ３．６",
+    "Epicenter": {
+      "Lat": 27.3,
+      "Lon": 128.4
+    },
     "MaxInt": "1",
     "Cities": [
       {

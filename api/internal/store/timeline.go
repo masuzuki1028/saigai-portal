@@ -38,7 +38,9 @@ type TimelineItem struct {
 	SourceURL   string            `dynamodbav:"sourceUrl"`
 	IssuedAt    time.Time         `dynamodbav:"issuedAt"`
 	Notified    bool              `dynamodbav:"notified"`
-	WrittenBy   string            `dynamodbav:"writtenBy"`
+	// Point は地図に表示する位置（地震の震央）。ない項目は nil
+	Point     *domain.LatLon `dynamodbav:"point,omitempty"`
+	WrittenBy string         `dynamodbav:"writtenBy"`
 }
 
 func timelinePK(locID string) string { return "LOC#" + locID }
@@ -373,4 +375,28 @@ func (s *Store) CancelTimelineItem(ctx context.Context, locID, itemID string, is
 		return nil
 	}
 	return err
+}
+
+// PutQuakeKey は情報源の地震の ID と、情報源によらない地震の識別子（domain.Quake.Key）の対応を記録する。
+// 気象庁の取消報には発生時刻が入っていないため、取消報から識別子を引くのに使う。
+func (s *Store) PutQuakeKey(ctx context.Context, eventID, quakeKey string) error {
+	item := key("QKEY#"+eventID, "META")
+	item["quakeKey"] = &types.AttributeValueMemberS{Value: quakeKey}
+	item["writtenBy"] = &types.AttributeValueMemberS{Value: s.WrittenBy}
+	item["ttl"] = &types.AttributeValueMemberN{Value: strconv.FormatInt(ttlAfter(s.Now(), EventTTL), 10)}
+	_, err := s.DB.PutItem(ctx, &dynamodb.PutItemInput{TableName: &s.Tables.Events, Item: item})
+	return err
+}
+
+// GetQuakeKey は地震の ID から識別子を引く。記録がなければ空を返す。
+func (s *Store) GetQuakeKey(ctx context.Context, eventID string) (string, error) {
+	out, err := s.DB.GetItem(ctx, &dynamodb.GetItemInput{TableName: &s.Tables.Events, Key: key("QKEY#"+eventID, "META")})
+	if err != nil || out.Item == nil {
+		return "", err
+	}
+	v, _ := out.Item["quakeKey"].(*types.AttributeValueMemberS)
+	if v == nil {
+		return "", nil
+	}
+	return v.Value, nil
 }

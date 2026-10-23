@@ -24,6 +24,21 @@ const addresses = [
 
 /** 本物の API（api/openapi.yaml）と同じ形で応答するモック */
 export const handlers = [
+  // 発表区域の形（静的ファイル）。Vitest では public/ を配信しないため小さな形を返す。
+  // ブラウザ（dev:mock・E2E）では本物の public/geo/warn/*.json をそのまま使う
+  ...(typeof window !== "undefined" && "serviceWorker" in navigator
+    ? []
+    : [
+        http.get("*/geo/warn/:pref", () =>
+          HttpResponse.json({
+            type: "FeatureCollection",
+            features: [
+              { type: "Feature", properties: { code: "1520200", name: "新潟県長岡市" }, geometry: { type: "MultiPolygon", coordinates: [[[[138.8, 37.4], [138.9, 37.4], [138.9, 37.5], [138.8, 37.4]]]] } },
+              { type: "Feature", properties: { code: "1310100", name: "東京都千代田区" }, geometry: { type: "MultiPolygon", coordinates: [[[[139.7, 35.6], [139.8, 35.6], [139.8, 35.7], [139.7, 35.6]]]] } },
+            ],
+          }),
+        ),
+      ]),
   http.get(ADDRESS_SEARCH_URL, ({ request }) => {
     const q = new URL(request.url).searchParams.get("q") ?? "";
     const hits = addresses.filter((a) => q && a.title.includes(q.replace(/\s/g, "")));

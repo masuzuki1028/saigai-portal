@@ -31,6 +31,8 @@ web/playwright-report/
 web/test-results/
 web/blob-report/
 web/next-env.d.ts
+# node_modules からコピーする MapLibre の Web Worker（scripts/copy-maplibre.mjs）
+web/public/maplibre/
 *.tsbuildinfo
 npm-debug.log*
 

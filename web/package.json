@@ -7,11 +7,11 @@
     "node": ">=24.21.0"
   },
   "scripts": {
-    "dev": "next dev",
-    "dev:mock": "NEXT_PUBLIC_API_MOCK=1 next dev",
-    "dev:local": "NEXT_PUBLIC_API_BASE=http://127.0.0.1:8080/api next dev",
-    "build": "next build && rm -f out/mockServiceWorker.js",
-    "build:mock": "NEXT_PUBLIC_API_MOCK=1 next build",
+    "dev": "node scripts/copy-maplibre.mjs && next dev",
+    "dev:mock": "node scripts/copy-maplibre.mjs && NEXT_PUBLIC_API_MOCK=1 next dev",
+    "dev:local": "node scripts/copy-maplibre.mjs && NEXT_PUBLIC_API_BASE=http://127.0.0.1:8080/api next dev",
+    "build": "node scripts/copy-maplibre.mjs && next build && rm -f out/mockServiceWorker.js",
+    "build:mock": "node scripts/copy-maplibre.mjs && NEXT_PUBLIC_API_MOCK=1 next build",
     "serve": "node scripts/serve-out.mjs 3000",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
@@ -23,7 +23,7 @@
   },
   "dependencies": {
     "maplibre-gl": "6.12.0",
-    "next": "16.3.8",
+    "next": "16.4.2",
     "openapi-fetch": "0.17.0",
     "react": "19.3.0",
     "react-dom": "19.3.0"
@@ -41,7 +41,7 @@
     "@types/react-dom": "19.3.0",
     "@vitejs/plugin-react": "6.1.2",
     "eslint": "10.12.0",
-    "eslint-config-next": "16.3.8",
+    "eslint-config-next": "16.4.2",
     "eslint-plugin-security": "4.2.0",
     "jsdom": "30.1.2",
     "msw": "3.0.2",

@@ -11,15 +11,14 @@
 package main
 
 import (
-	"encoding/binary"
 	"encoding/json"
 	"flag"
-	"fmt"
 	"log"
 	"math"
 	"os"
 	"sort"
-	"strings"
+
+	"github.com/masuzuki1028/saigai-portal/api/internal/area/shpfile"
 )
 
 type zone struct {
@@ -37,11 +36,11 @@ func main() {
 	out := flag.String("out", "internal/area/tsunami.json", "出力先")
 	flag.Parse()
 
-	recs, err := readDBF(*dbf)
+	recs, err := shpfile.ReadDBF(*dbf)
 	if err != nil {
 		log.Fatal(err)
 	}
-	shapes, err := readPolylines(*shp)
+	shapes, err := shpfile.ReadShapes(*shp, 3)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -101,76 +100,4 @@ func main() {
 		log.Fatal(err)
 	}
 	log.Printf("%d 区域・%d セル・%d バイト", len(zones), total, len(b))
-}
-
-// readPolylines は PolyLine（shapeType=3）のシェープファイルを読む。
-func readPolylines(path string) ([][][][2]float64, error) {
-	b, err := os.ReadFile(path)
-	if err != nil {
-		return nil, err
-	}
-	if t := binary.LittleEndian.Uint32(b[32:36]); t != 3 {
-		return nil, fmt.Errorf("PolyLine ではない: shapeType=%d", t)
-	}
-	var out [][][][2]float64
-	for p := 100; p+8 <= len(b); {
-		length := int(binary.BigEndian.Uint32(b[p+4:p+8])) * 2
-		rec := b[p+8 : p+8+length]
-		p += 8 + length
-		if binary.LittleEndian.Uint32(rec[0:4]) == 0 { // Null shape
-			out = append(out, nil)
-			continue
-		}
-		numParts := int(binary.LittleEndian.Uint32(rec[36:40]))
-		numPoints := int(binary.LittleEndian.Uint32(rec[40:44]))
-		starts := make([]int, numParts+1)
-		for i := 0; i < numParts; i++ {
-			starts[i] = int(binary.LittleEndian.Uint32(rec[44+4*i:]))
-		}
-		starts[numParts] = numPoints
-		pts := 44 + 4*numParts
-		var parts [][][2]float64
-		for i := 0; i < numParts; i++ {
-			var line [][2]float64
-			for j := starts[i]; j < starts[i+1]; j++ {
-				x := math.Float64frombits(binary.LittleEndian.Uint64(rec[pts+16*j:]))
-				y := math.Float64frombits(binary.LittleEndian.Uint64(rec[pts+16*j+8:]))
-				line = append(line, [2]float64{x, y})
-			}
-			parts = append(parts, line)
-		}
-		out = append(out, parts)
-	}
-	return out, nil
-}
-
-// readDBF は dBase ファイルの文字列フィールドを読む（文字コードは UTF-8）。
-func readDBF(path string) ([]map[string]string, error) {
-	b, err := os.ReadFile(path)
-	if err != nil {
-		return nil, err
-	}
-	n := int(binary.LittleEndian.Uint32(b[4:8]))
-	headerLen := int(binary.LittleEndian.Uint16(b[8:10]))
-	recLen := int(binary.LittleEndian.Uint16(b[10:12]))
-	type field struct {
-		name string
-		len  int
-	}
-	var fields []field
-	for p := 32; b[p] != 0x0d; p += 32 {
-		fields = append(fields, field{strings.TrimRight(string(b[p:p+11]), "\x00"), int(b[p+16])})
-	}
-	var out []map[string]string
-	for i := 0; i < n; i++ {
-		rec := b[headerLen+i*recLen : headerLen+(i+1)*recLen]
-		m := map[string]string{}
-		o := 1
-		for _, f := range fields {
-			m[f.name] = strings.TrimSpace(strings.TrimRight(string(rec[o:o+f.len]), "\x00"))
-			o += f.len
-		}
-		out = append(out, m)
-	}
-	return out, nil
 }
