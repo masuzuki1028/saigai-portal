@@ -164,7 +164,8 @@ flowchart LR
 - `npm ci --ignore-scripts` でインストール時のスクリプト実行を止める（必要なものだけ許可）
 - GitHub Actions の外部 Action は **コミット SHA で固定**し、Dependabot で更新
 - 新しい依存を追加するときはレビューで「必要性・メンテ状況・ダウンロード数」を確認
-- Dependabot の更新PRは**公開から数日待ってからマージ**（公開直後の悪意あるバージョンを避ける）
+- Dependabot の更新PRは**公開から数日待ってからマージ**（公開直後の悪意あるバージョンを避ける）。`dependabot.yml` の `cooldown`（14日）で、公開から14日経った版だけを PR にする
+- パッチ・マイナーの更新は、CI（ブランチ保護の必須チェック）が通れば自動でマージする（`.github/workflows/dependabot-automerge.yml`）。メジャーの更新は手動で確認する
 - Lambda はコンテナを使わず zip 配布（OS パッケージの脆弱性管理を AWS 管理ランタイムに任せる）
 
 ### 4.3 対応期限（SLA）
