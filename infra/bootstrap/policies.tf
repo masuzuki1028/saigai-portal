@@ -11,13 +11,26 @@ data "aws_iam_policy_document" "deny_data_read" {
       "dynamodb:Scan",
       "dynamodb:GetRecords",
       "dynamodb:PartiQLSelect",
-      "kms:Decrypt",
       "secretsmanager:GetSecretValue",
       "ssm:GetParameter",
       "ssm:GetParameters",
       "ssm:GetParametersByPath",
     ]
     resources = ["*"]
+  }
+  # 復号は拒否する。ただし Lambda を通した復号（関数の設定を見るときの環境変数。AWS 管理のキーで暗号化されている）は許可する。
+  # 環境変数にはテーブル名やキューの URL しか入れない。利用者のデータ（アプリ層で暗号化した座標・住所）の復号は
+  # 直接 KMS を呼ぶため、この拒否にかかる
+  statement {
+    sid       = "DenyDecryptExceptLambdaConfig"
+    effect    = "Deny"
+    actions   = ["kms:Decrypt"]
+    resources = ["*"]
+    condition {
+      test     = "StringNotLike"
+      variable = "kms:ViaService"
+      values   = ["lambda.*.amazonaws.com"]
+    }
   }
   statement {
     sid           = "DenyObjectReadExceptState"
