@@ -119,7 +119,8 @@ flowchart LR
 | 秘密の値 | トークン・パスワード・API キーは **Secrets** に置く（登録後は誰も値を見られず、ログでは伏せられる）。**Variables は平文でログにも出る**ため、公開されて困らない値だけに使う |
 | アカウント ID を含む値 | ロールの ARN・state のバケット名は秘密ではないが、ログに出さないよう Secrets に置く |
 | AWS の認証情報 | GitHub には置かない（OIDC）。アプリが使う外部 API のトークンは SSM Parameter Store（SecureString）に置く |
-| `terraform plan` | 全文を PR のコメント・ログ・アーティファクトに出さない（構成とアカウント ID が見えるため）。件数だけをジョブの要約に出し、全文は手元で `saigai-readonly` で確認する |
+| `terraform plan` | 全文を PR のコメント・ログ・アーティファクトに出さない（構成とアカウント ID が見えるため）。件数だけをジョブの要約に出し、全文は手元で `saigai-readonly` で確認する（`.github/scripts/tf-plan.sh`）。plan のファイルも state の値を含むため、アーティファクトにしない。deploy のジョブでは承認のあとで plan を作り直し、承認前の plan と差分（リソースと操作）のハッシュが一致するときだけ apply する |
+| 出力の値 | `terraform.tfvars` は `TF_VARS_PROD`（Secrets）から作る。アカウント ID・ドメイン・メールアドレス・バケット名などは `::add-mask::` で伏せ、AWS CLI の出力は `--query` で必要な値だけにする（ARN を出さない） |
 | フォークからの PR | `pull_request` で動かす（フォークには Secrets も OIDC のトークンも渡らない）。`pull_request_target` は使わない |
 | 秘密情報の混入 | コミット前に gitleaks（`.githooks/pre-commit`）、CI でも gitleaks。万一 push したら、履歴から消すだけでなく、すぐにキーを無効化して作り直す |
 
@@ -204,53 +205,25 @@ jobs:
       - run: terraform -chdir=infra/envs/prod show -json tfplan | jq -r '[.resource_changes[].change.actions | join(",")] | group_by(.) | map("\(.[0]): \(length)") | .[]' >> "$GITHUB_STEP_SUMMARY"
 ```
 
-### 5.2 `deploy-prod.yml`（骨子）
+### 5.2 `deploy-prod.yml`
 
-```yaml
-name: deploy-prod
-on:
-  push:
-    tags: ['v*.*.*']
+実際のファイルは `.github/workflows/deploy-prod.yml`。処理は `.github/scripts/` のスクリプトにまとめている。
 
-permissions:
-  contents: read
+| ジョブ | Environment | ロール | 内容 |
+| --- | --- | --- | --- |
+| `plan` | `prod-plan`（承認なし） | `saigai-gha-plan` | `terraform plan`（`tf-plan.sh`）。件数を要約に出し、差分のハッシュを次のジョブに渡す |
+| `deploy` | `prod`（承認が必要） | `saigai-gha-deploy` | 1. plan をやり直し、承認前とハッシュが一致することを確認 → 差分があれば `terraform apply`<br>2. Lambda を arm64 でビルド（`build-lambda.sh`）<br>3. 画面をビルド（Cognito の設定は `terraform output` から渡す。なければ失敗させる）<br>4. Lambda のコードを更新してバージョンを公開し、`live` エイリアスを切り替える（`deploy-lambda.sh`。切り替え前のバージョンを記録）<br>5. 画面を S3 に置き、CloudFront のキャッシュを消す（`deploy-web.sh`）<br>6. スモークテスト（`smoke.sh`。`/api/health` と主要な画面が 200）<br>7. どこかで失敗したら、`live` エイリアスを記録したバージョンに戻す（`rollback-lambda.sh`） |
 
-concurrency:
-  group: deploy-prod
-  cancel-in-progress: false   # 本番デプロイは並列に走らせない
-
-jobs:
-  plan:
-    environment: prod-plan
-    permissions: { contents: read, id-token: write }
-    runs-on: ubuntu-latest
-    steps:
-      # checkout → OIDC(gha-plan-prod) → terraform plan -out=tfplan → artifact 保存
-
-  deploy:
-    needs: plan
-    environment: prod          # ← 承認者のレビューを必須にする
-    permissions: { contents: read, id-token: write }
-    runs-on: ubuntu-latest
-    steps:
-      # 1. OIDC(gha-deploy-prod)
-      # 2. terraform apply tfplan（plan と同じ内容だけを適用）
-      # 3. Go を arm64 でビルド → zip → S3 → update-function-code → publish-version
-      # 4. エイリアス live を新バージョンに切替（旧バージョン番号を記録）
-      # 5. web: npm ci → build → s3 sync（--delete）→ CloudFront 無効化
-      # 6. スモークテスト（/api/health、主要画面の200応答）
-      # 7. 失敗したら live エイリアスを旧バージョンに戻す
-```
-
----
+- Lambda の zip は直接アップロードする（50MB 未満のため、成果物用の S3 バケットは作らない）
+- 取り込みの定期実行（`ingest_enabled`）は、最初のデプロイが成功してから true にする
 
 ## 6. デプロイ手順の詳細
 
 ### 6.1 Lambda（Go）
 
 1. `GOOS=linux GOARCH=arm64 CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o bootstrap ./cmd/<name>`
-2. `bootstrap` を zip にまとめ、`s3://saigai-<env>-artifacts/lambda/<name>/<git-sha>.zip` に置く
-3. `aws lambda update-function-code` → `publish-version`
+2. `bootstrap` を zip にまとめる（コミットは `vcs.revision` としてバイナリに埋め込まれ、書き込みの `writtenBy` に使う）
+3. `aws lambda update-function-code --publish`（zip を直接送る）
 4. エイリアス `live` を新バージョンへ（API Gateway・SQS・Scheduler は `live` を呼ぶ）
 5. Terraform 側はコード本体を管理しない（`ignore_changes = [s3_key, ...]`）。インフラ変更とコード変更を独立させる
 

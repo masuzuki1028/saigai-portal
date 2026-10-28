@@ -24,12 +24,18 @@ type TestSender interface {
 	SendTest(ctx context.Context, u store.User) error
 }
 
+// Accounts は認証基盤のユーザーを削除する（auth.Cognito）。ローカルでは nil。
+type Accounts interface {
+	DeleteUser(ctx context.Context, p auth.Principal) error
+}
+
 // Server は StrictServerInterface の実装。
 type Server struct {
 	Store    *store.Store
 	Resolver area.Resolver
 	Sealer   crypto.Sealer
 	Notifier TestSender
+	Accounts Accounts
 	Log      *slog.Logger
 }
 

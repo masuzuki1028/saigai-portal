@@ -8,9 +8,11 @@ import (
 	"strings"
 )
 
-// New は JSON 形式の構造化ログを返す。
+// New は JSON 形式の構造化ログを返す。出力するレベルは LOG_LEVEL（DEBUG / INFO / WARN / ERROR。初期値は INFO）。
 func New() *slog.Logger {
-	return slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{ReplaceAttr: redact}))
+	var level slog.Level
+	_ = level.UnmarshalText([]byte(os.Getenv("LOG_LEVEL"))) // 不正な値・未設定なら INFO のまま
+	return slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: level, ReplaceAttr: redact}))
 }
 
 // sensitiveKeys に一致する属性は値を伏せる。

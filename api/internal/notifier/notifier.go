@@ -55,6 +55,10 @@ func (n *Notifier) Handle(ctx context.Context, jobs []matcher.Job) error {
 		return nil
 	}
 	to, err := n.Directory.Email(ctx, u.Principal())
+	if errors.Is(err, auth.ErrNoEmail) {
+		n.Log.Warn("確認済みのメールアドレスがないため通知しません", "locationId", j.LocationID)
+		return nil
+	}
 	if err != nil {
 		return fmt.Errorf("lookup email: %w", err)
 	}

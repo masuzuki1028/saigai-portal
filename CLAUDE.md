@@ -5,14 +5,14 @@
 
 ## 技術スタック
 
-> 依存パッケージは公開から2週間以上経ったバージョンに固定する（セキュリティ修正は例外）。Terraform は AWS への構築時に確定する。
+> 依存パッケージは公開から2週間以上経ったバージョンに固定する（セキュリティ修正は例外）。
 
 | 領域 | 採用技術 | バージョン |
 | --- | --- | --- |
 | フロントエンド | Next.js（App Router, `output: 'export'` の静的出力）+ React + TypeScript | Next.js 16.4.2（セキュリティ修正のため2週間の例外）/ React 19.3.0 / TypeScript 5.9.3 |
 | 地図 | MapLibre GL JS + 国土地理院タイル | 6.12.0 |
 | Node.js | `web/.nvmrc` で固定、パッケージ管理は npm | 24.21.0 |
-| バックエンド | Go（AWS Lambda, `provided.al2023`, arm64） | 1.26（toolchain 1.26.10、`api/go.mod`） |
+| バックエンド | Go（AWS Lambda, `provided.al2023`, arm64）。`cmd/<関数名>/` が Lambda ごとの main、部品の組み立ては `internal/awsenv` | 1.26（toolchain 1.26.10、`api/go.mod`）/ aws-lambda-go 1.55.1 |
 | API | API Gateway HTTP API + JWT オーソライザ | - |
 | データ | DynamoDB（オンデマンド）、S3 | - |
 | 非同期処理 | SQS（+ DLQ）、EventBridge Scheduler | - |
@@ -20,7 +20,7 @@
 | 配信 | S3 + CloudFront（OAC）+ WAF | - |
 | 暗号化・秘密情報 | KMS（エンベロープ暗号化）、SSM Parameter Store（SecureString） | - |
 | 通知 | SES、Web Push、Slack / Teams Webhook | - |
-| IaC | Terraform（state は S3 に保存し、`use_lockfile` でロック） | TBD |
+| IaC | Terraform（state は S3 に保存し、`use_lockfile` でロック） | 1.16.5（`infra/.terraform-version`）/ AWS provider 6.67.0 |
 | CI/CD | GitHub Actions（AWS へは OIDC で認証） | - |
 | リージョン | ap-northeast-1（CloudFront 用の証明書のみ us-east-1） | - |
 | API 仕様 | OpenAPI（`api/openapi.yaml`）。Go は oapi-codegen、TS は openapi-typescript + openapi-fetch で生成 | oapi-codegen 2.7.2 / openapi-typescript 7.13.0 / openapi-fetch 0.17.0 |

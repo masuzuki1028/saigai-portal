@@ -2,6 +2,7 @@ package ingest
 
 import (
 	"context"
+	"errors"
 	"io"
 	"log/slog"
 	"net/http"
@@ -34,6 +35,12 @@ func (f *fakeStore) PutEventIfAbsent(_ context.Context, ev *domain.Event) (bool,
 	}
 	f.events[ev.ID] = true
 	return true, nil
+}
+func (f *fakeStore) DeleteEvent(_ context.Context, id string) error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	delete(f.events, id)
+	return nil
 }
 func (f *fakeStore) GetCursor(_ context.Context, s string) (store.IngestCursor, error) {
 	c, ok := f.cursors[s]
@@ -103,5 +110,35 @@ func TestPollFetchesEachTelegramOnce(t *testing.T) {
 	st, _ = in.Poll(ctx)
 	if st.Skipped != 1 || telegramHits["20261020075747_0_VPWW54_160000.xml"] != 1 {
 		t.Errorf("3回目: %+v hits=%v", st, telegramHits)
+	}
+}
+
+// 後続の処理（match-queue への送信）に失敗した電文は、次の取り込みでもう一度処理する。
+func TestIngestRetriesWhenOnEventFails(t *testing.T) {
+	data, err := os.ReadFile("../jma/testdata/20261020075747_0_VPWW54_160000.xml")
+	if err != nil {
+		t.Fatal(err)
+	}
+	fs := &fakeStore{events: map[string]bool{}, cursors: map[string]store.IngestCursor{}}
+	calls := 0
+	in := New(fs, func(context.Context, *domain.Event) error {
+		calls++
+		if calls == 1 {
+			return errors.New("queue unavailable")
+		}
+		return nil
+	}, slog.New(slog.NewTextHandler(io.Discard, nil)))
+
+	ctx := context.Background()
+	if err := in.Ingest(ctx, data, "t1", &Stats{}); err == nil {
+		t.Fatal("1回目: エラーにならない")
+	}
+	var st Stats
+	if err := in.Ingest(ctx, data, "t1", &st); err != nil || st.New != 1 || calls != 2 {
+		t.Errorf("2回目: err=%v stats=%+v calls=%d", err, st, calls)
+	}
+	st = Stats{}
+	if err := in.Ingest(ctx, data, "t1", &st); err != nil || st.Skipped != 1 || calls != 2 {
+		t.Errorf("3回目: 成功した電文をもう一度処理した: err=%v stats=%+v calls=%d", err, st, calls)
 	}
 }
