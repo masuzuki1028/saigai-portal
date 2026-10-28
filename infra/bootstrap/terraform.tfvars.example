@@ -1,0 +1,6 @@
+# terraform.tfvars にコピーして値を入れる（terraform.tfvars は .gitignore 済み。公開リポジトリに載せない）
+account_id         = "123456789012"
+operator_user_name = "saigai-operator"
+
+# GitHub Actions の OIDC プロバイダがアカウントにすでにある場合は false（既存のものを参照する）
+# create_github_oidc_provider = false

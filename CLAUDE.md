@@ -59,7 +59,7 @@
 | SCA | npm | `npm audit`、`actions/dependency-review-action` | PR / 週次 |
 | IaC | Terraform | `terraform fmt` / `validate`、`tflint`、`trivy config` | PR |
 | 秘密情報 | 全体 | `gitleaks`（pre-commit と CI の両方） | コミット時 / PR |
-| DAST | dev 環境 | OWASP ZAP ベースラインスキャン | 週次 |
+| DAST | 本番（パッシブ） | OWASP ZAP ベースラインスキャン | 週次 |
 | 依存の自動更新 | Go / npm / GitHub Actions / Terraform provider | Dependabot（Renovate への切り替えを検討中） | 週次 |
 
 ## リポジトリ構成（モノレポ）
@@ -73,7 +73,7 @@ api/           # Go。cmd/<関数名>/ に Lambda ごとの main、internal/ に
   cmd/local/   # ローカル API サーバー
   cmd/replay/  # 災害シナリオの再現
   cmd/opsctl/  # リリース・ロールバック・DR 切り替えの CLI
-infra/         # Terraform。modules/ に再利用モジュール、envs/{dev,prod}/ に環境ごとの設定（東京・大阪の両リージョン）
+infra/         # Terraform。bootstrap/ に state・OIDC・ロール、modules/ に再利用モジュール、envs/prod/ に本番の設定（東京・大阪の両リージョン）。AWS は個人のアカウント1つに prod だけ
 docs/          # 設計ドキュメント
 compose.yaml   # DynamoDB Local / Mailpit
 .github/       # workflows / dependabot.yml / CODEOWNERS
@@ -89,6 +89,7 @@ compose.yaml   # DynamoDB Local / Mailpit
 - **ID**: ULID / UUID を使い、連番は使わない
 - **フロントエンド**: `dangerouslySetInnerHTML` は使わない。長期トークンを `localStorage` に置かない
 - **サプライチェーン**: 外部の GitHub Action はコミット SHA で固定する。`npm ci --ignore-scripts` を使い、ロックファイルをコミットする
+- **公開リポジトリ**: 本名・メールアドレス・AWS アカウント ID をコミットしない（アカウント ID は `terraform.tfvars` や Secrets で渡す）。トークン・API キーは GitHub の Secrets か SSM Parameter Store に置き、Variables（平文でログに出る）には置かない。`terraform plan` の全文を PR・ログに出さない
 - **冪等性**: 取り込み処理は `eventId` を使った条件付き書き込みで重複を排除する
 - **新旧バージョンの共存**: カナリア中は新旧が同時に動き、ロールバックしてもデータは戻らない。属性・API の変更は「拡張 → 縮小」を別リリースで行い、新しいバージョンが書いたデータを古いバージョンが読めるようにする。書き込みには `writtenBy`（リリースの SHA）を付ける
 - **マルチリージョン（DR）**: 東京（ap-northeast-1）がアクティブ、大阪（ap-northeast-3）がスタンバイ。リソースは両リージョンに作る。KMS はマルチリージョンキー、DynamoDB はグローバルテーブルを前提にする
@@ -97,6 +98,9 @@ compose.yaml   # DynamoDB Local / Mailpit
 ## コマンド
 
 ```sh
+# 初回のみ: コミット前に gitleaks で秘密情報を検査するフックを有効にする
+git config core.hooksPath .githooks
+
 # ローカル環境（DynamoDB Local :8000 / Mailpit SMTP :1025・画面 :8025）
 docker compose up -d
 

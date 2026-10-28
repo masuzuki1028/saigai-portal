@@ -12,7 +12,7 @@
 | --- | --- |
 | **常に検証する**（Never trust, always verify） | ネットワークの内側・外側で信頼を分けない。すべての API 呼び出し・AWS 操作で、毎回「誰が・何の権限で」を検証する |
 | **最小権限** | 人・CI・Lambda それぞれに必要最小限の権限だけを与える。期限付きの一時クレデンシャルを使う |
-| **侵害を前提にする**（Assume breach） | 1つが破られても被害が広がらないよう、データ暗号化・アカウント分離・テナント分離・ログ監視を重ねる |
+| **侵害を前提にする**（Assume breach） | 1つが破られても被害が広がらないよう、データ暗号化・ロールの分離・テナント分離・ログ監視を重ねる（個人運用のため AWS アカウントは1つ。→ [05](./05_system_architecture.md) 6章） |
 | **持たない・残さない** | 不要な個人情報はそもそも取得しない。保持期限を過ぎたら自動削除する |
 
 ---
@@ -25,7 +25,7 @@
 | アカウント | パスワードリスト攻撃、フィッシング | MFA / パスキー、レート制限、不審ログイン通知 |
 | 法人の拠点情報・履歴 | 他社データの閲覧、内部不正 | 組織単位の認可、ロール、監査ログ |
 | Slack/Teams Webhook URL | 流出による他社チャンネルへの投稿 | 暗号化保存、画面では伏せ字表示 |
-| AWS 環境 | アクセスキー漏えい、CI 経由の侵入 | 長期キーなし（CI は OIDC、人は MFA 付きの一時クレデンシャル）、アカウント分離 |
+| AWS 環境 | アクセスキー漏えい、CI 経由の侵入 | 長期キーなし（CI は OIDC、人は MFA 付きの一時クレデンシャル）、用途別のロールと権限の範囲の限定 |
 | ソースコード・依存関係 | 脆弱な/悪意あるライブラリ、Action の改ざん | 依存スキャン、SHA 固定、更新の自動化 |
 | 通知の信頼性 | なりすまし通知、デマの拡散 | 公式/SNS の明確な区別、送信元ドメイン認証（SPF/DKIM/DMARC） |
 
@@ -79,9 +79,10 @@
 
 | 項目 | 内容 |
 | --- | --- |
-| AWS へのログイン | 個人運用のため IAM Identity Center は使わない。管理アカウントに運営者用の **IAM ユーザーを1つ**作り、コンソールのパスワード＋MFA だけを設定する。**アクセスキーは作らない** |
+| AWS へのログイン | 個人運用のため IAM Identity Center は使わない。アカウントに運営者用の **IAM ユーザーを1つ**作り、コンソールのパスワード＋MFA だけを設定する。**アクセスキーは作らない** |
 | CLI | `aws login`（コンソールのログインから一時クレデンシャルを取得する。AWS CLI v2 の新しいバージョンが必要。要確認）または CloudShell を使う |
-| 各環境の操作 | IAM ユーザー自体にはロールの引き受け（`sts:AssumeRole`）以外の権限を与えない。dev / prod のアカウントに `saigai-readonly` / `saigai-admin` ロールを作り、信頼ポリシーで MFA を必須にする（`aws:MultiFactorAuthPresent`） |
+| 各環境の操作 | IAM ユーザー自体にはロールの引き受け（`sts:AssumeRole`）と自分の MFA の管理以外の権限を与えない。`saigai-readonly`（普段使い）/ `saigai-admin`（最初の構築・緊急時）のロールを作り、信頼ポリシーで MFA を必須にする（`aws:MultiFactorAuthPresent`。`aws login` の一時クレデンシャルで条件を満たせるかは要確認） |
+| Claude Code などからの操作 | 運営者の端末のセッション（上のロール）で実行する。`terraform plan` は読み取り専用のロールで行い、`apply` は運営者が内容を確認してから実行する |
 | ルートユーザー | MFA を設定して金庫保管。通常は使わない。使用時はアラート |
 | 権限 | 普段は ReadOnly。本番の変更は CI 経由のみが原則。緊急時用の権限は期限付きで付与し、使用を記録 |
 | 本番データの閲覧 | 原則禁止。調査が必要な場合も暗号化フィールドは復号しない |
@@ -122,7 +123,7 @@
 
 | 対策 | 内容 | 費用感 |
 | --- | --- | --- |
-| CloudTrail | 全リージョンの管理イベントを記録し、ログ用 S3 は改ざん防止（オブジェクトロック or 別アカウントへ集約） | 管理イベント1証跡は無料（S3 保存料のみ） |
+| CloudTrail | 全リージョンの管理イベントを記録し、ログ用 S3 は改ざん防止（オブジェクトロック。アカウントが1つのため、別アカウントへの集約はしない） | 管理イベント1証跡は無料（S3 保存料のみ） |
 | GuardDuty | 不審な API 呼び出し・認証情報の悪用を検知 | 小規模なら月数ドル |
 | IAM Access Analyzer | 外部に公開されているリソースを検出 | 外部アクセス分析は無料 |
 | アラート | ルートユーザー使用、IAM ポリシー変更、KMS キー削除予約、GuardDuty の中以上の検知 → 運営者へ即時通知 | ほぼ無料 |
@@ -141,7 +142,7 @@ flowchart LR
   A -.- A1[IDE lint<br/>pre-commit で gitleaks]
   B -.- B1[依存: govulncheck / npm audit / dependency-review<br/>コード: golangci-lint(gosec) / eslint / CodeQL※<br/>IaC: tflint / trivy config<br/>秘密情報: gitleaks]
   C -.- C1[Dependabot で更新PR自動作成<br/>週次の再スキャン]
-  D -.- D1[週次 DAST: OWASP ZAP ベースライン(dev)<br/>GuardDuty / CloudTrail 監視]
+  D -.- D1[週次 DAST: OWASP ZAP ベースライン(本番・パッシブ)<br/>GuardDuty / CloudTrail 監視]
 ```
 
 ※ CodeQL は公開リポジトリなら無料。非公開の場合は Semgrep(OSS) 等で代替。
@@ -154,7 +155,7 @@ flowchart LR
 | SAST | TypeScript | ESLint（セキュリティ系ルール）、CodeQL※ | PR |
 | IaC | Terraform | `tflint`、`trivy config` | PR |
 | 秘密情報 | 全体 | `gitleaks`（pre-commit と CI の両方） | コミット時 / PR |
-| DAST | dev 環境 | OWASP ZAP ベースラインスキャン | 週次 |
+| DAST | 本番（パッシブなベースラインスキャンのみ） | OWASP ZAP ベースラインスキャン | 週次 |
 | 依存の自動更新 | Go / npm / Actions / Terraform provider | Dependabot | 週次 |
 
 ### 4.2 サプライチェーン対策

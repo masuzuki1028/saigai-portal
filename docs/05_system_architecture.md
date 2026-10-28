@@ -13,7 +13,7 @@
 | VPC を使わない | Lambda は VPC 外で動かす。**NAT Gateway（月$30〜）が不要**。DynamoDB 等へは IAM 認証でアクセス |
 | 静的配信を最大化 | Next.js は静的出力して S3 + CloudFront で配信。災害時のアクセス集中にも強い |
 | 非同期で処理を分ける | 取り込み → 突き合わせ → 通知 を SQS でつなぎ、負荷集中や一部障害の影響を小さくする |
-| 環境は AWS アカウントで分ける | dev / prod を別アカウントにし、権限と被害範囲を分離（→ [07](./07_security.md)） |
+| 1つのアカウントに prod だけを作る | 個人運用のため、AWS アカウントは1つにし、AWS に作るのは prod だけにする。開発・結合の確認はローカル（DynamoDB Local・Mailpit・MSW）で行う（6章） |
 | リージョン | 東京（ap-northeast-1）。CloudFront 用の証明書のみ us-east-1 |
 
 ---
@@ -216,14 +216,21 @@ sequenceDiagram
 
 ## 6. 環境構成
 
-| 環境 | AWSアカウント | 用途 | デプロイ |
-| --- | --- | --- | --- |
-| dev | saigai-dev | 開発・結合確認 | main マージで自動 |
-| prod | saigai-prod | 本番 | 承認後に手動（→ [06](./06_deploy_flow.md)） |
-| （管理） | 管理アカウント | AWS Organizations・運営者用 IAM ユーザー（MFA 必須・アクセスキーなし）・請求 | Terraform（手動適用） |
+**個人の AWS アカウント1つに、prod だけを作る**（2026-10-23 決定）。
 
-- AWS Organizations は無料。アカウントを分けることで「dev の権限で本番データに触れない」状態をつくる
-- Terraform の state は各アカウントの S3 に保存（バージョニング＋暗号化）。ロックは **S3 ネイティブロック（`use_lockfile`）** を使い DynamoDB のロックテーブルは不要にする
+| 環境 | 場所 | 用途 | デプロイ |
+| --- | --- | --- | --- |
+| local | 手元（DynamoDB Local・Mailpit・MSW・`cmd/local`・`cmd/replay`） | 開発・結合の確認・災害シナリオの再現 | - |
+| prod | AWS（個人のアカウント1つ） | 本番 | タグ作成 → 承認後に CI から（→ [06](./06_deploy_flow.md)） |
+
+- **dev 環境を作らない理由**: 費用（KMS・CloudFront などが2倍になる）と管理の手間を抑えるため。ローカルの環境（8章の replay・E2E）で、取り込み〜通知の流れはほぼ確認できる。Cognito・IAM・CloudFront のように AWS でしか確認できない部分は、本番へのデプロイ後のスモークテスト（テスト用のユーザー）と、09 のダークリリースで確認する
+- **アカウントを分けないことの補い**: 環境ごとのアカウント分離による被害範囲の限定はできないため、次で補う
+  - リソースの名前は `saigai-prod-*` にそろえ、CI のデプロイ用ロールが変更できる範囲をこの接頭辞に限定する
+  - 人の操作は、読み取り専用のロールを普段使いにし、変更用のロールは必要なときだけ引き受ける（→ [07](./07_security.md) 3.4）
+  - バックアップは削除できない保管庫（AWS Backup の Vault Lock）に置く（→ [10](./10_disaster_recovery.md) 7章）
+- 将来、法人向けの提供（Phase 3）を始める前に、AWS Organizations で本番を別アカウントに分けることを検討する
+- Terraform の state は S3 に保存（バージョニング＋暗号化）。ロックは **S3 ネイティブロック（`use_lockfile`）** を使い、DynamoDB のロックテーブルは不要にする
+- state のバケットと、CI・運営者用のロールは `infra/bootstrap` で作る（最初の1回だけ手元から apply する）
 
 ### 6.1 リポジトリ構成（モノレポ）
 
@@ -242,8 +249,8 @@ saigai-portal/
 │   └── internal/        # ドメインロジック・リポジトリ・JMAパーサ等
 ├── infra/               # Terraform
 │   ├── modules/         # 再利用モジュール（lambda, api, web, data, monitoring, security）
+│   ├── bootstrap/       # state のバケット・OIDC・CI と運営者用のロール（最初の1回だけ手元から apply）
 │   └── envs/
-│       ├── dev/
 │       └── prod/
 ├── docs/
 └── .github/
@@ -270,7 +277,7 @@ saigai-portal/
 | WAF | Web ACL＋数ルール | $6〜10 ※ |
 | GuardDuty | 小規模アカウント | $1〜3 |
 | CloudWatch | ログ・アラーム少数 | $1〜3 |
-| **合計** | | **約 $15〜25 / 月**（prod。dev は WAF なしで数ドル） |
+| **合計** | | **約 $15〜25 / 月**（prod だけ。dev 環境は作らない） |
 
 > ※ CloudFront の定額プラン（WAF込みの無料/低額プラン）が使える場合は WAF 費用を圧縮できる可能性がある。料金・無料枠は変わるため、構築時に最新を確認すること。
 > 01 では「〜$10/月」としていたが、セキュリティ対策（WAF・GuardDuty・KMS）を加えると上記程度になる見込み。

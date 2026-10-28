@@ -1,0 +1,12 @@
+#!/bin/sh
+# コミットする前に、ステージした変更に秘密情報（トークン・API キーなど）が含まれていないか gitleaks で調べる（docs/07 4.1）。
+# 有効にする: git config core.hooksPath .githooks
+# gitleaks がインストールされていなければ go run で動かす（初回は取得に時間がかかる）。
+set -eu
+if command -v gitleaks >/dev/null 2>&1; then
+  exec gitleaks git --pre-commit --staged --redact --no-banner
+fi
+if command -v go >/dev/null 2>&1; then
+  exec go run github.com/zricethezav/gitleaks/v8@v8.30.0 git --pre-commit --staged --redact --no-banner
+fi
+echo "gitleaks も go も見つからないため、秘密情報の検査をせずにコミットします" >&2

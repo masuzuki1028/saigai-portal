@@ -38,7 +38,9 @@ npm-debug.log*
 
 # api（Go）
 api/bin/
-bootstrap
+# Lambda のビルド成果物（infra/bootstrap ディレクトリは除外しない）
+api/**/bootstrap
+!api/**/bootstrap/
 *.zip
 coverage.out
 *.test

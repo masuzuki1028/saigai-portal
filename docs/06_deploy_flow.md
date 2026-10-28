@@ -12,7 +12,7 @@
 | **長期のアクセスキーを持たない** | GitHub Actions → AWS は **OIDC** で一時クレデンシャルを取得。IAMユーザー・アクセスキーは作らない |
 | インフラとアプリを分ける | インフラは Terraform、Lambda のコードと画面は CI からデプロイ。役割と権限を分ける |
 | PR で全部チェック | テスト・静的解析・脆弱性スキャン・`terraform plan` を PR 上で必ず通す |
-| dev は自動、prod は承認制 | main マージで dev へ自動デプロイ。prod はタグ作成 → 承認後にデプロイ |
+| prod だけ・承認制 | AWS には prod だけを作る（→ [05](./05_system_architecture.md) 6章）。PR と main では `terraform plan` まで。prod へはタグ作成 → 承認後にデプロイ |
 | すぐ戻せる | Lambda はバージョン＋エイリアス、画面は S3 のバージョン単位で切り戻し可能にする |
 
 ---
@@ -40,21 +40,11 @@ flowchart LR
     G[api: vet / golangci-lint / test / govulncheck]
     T[infra: fmt / validate / tflint / trivy config]
     S[共通: gitleaks / 依存関係レビュー]
-    P[terraform plan（dev）→ PRにコメント]
+    P[terraform plan（prod・読み取り専用）→ 件数だけをジョブの要約に出す]
   end
 
   PR --> CI
   CI -->|レビュー承認 + マージ| Main[main]
-
-  subgraph DD[main マージ時: deploy-dev.yml]
-    direction TB
-    DA[terraform apply（dev）]
-    DB[Lambda ビルド・デプロイ（dev）]
-    DC[web ビルド → S3 → CloudFront 無効化]
-    DS[スモークテスト]
-  end
-
-  Main --> DD
 
   Main -->|タグ v*.*.*| Tag[リリースタグ]
   subgraph DP[タグ作成時: deploy-prod.yml]
@@ -73,10 +63,9 @@ flowchart LR
 
 | ファイル | トリガー | 内容 |
 | --- | --- | --- |
-| `ci.yml` | pull_request | テスト・静的解析・脆弱性スキャン・`terraform plan`(dev) |
-| `deploy-dev.yml` | push to main | dev へ自動デプロイ |
+| `ci.yml` | pull_request / push to main | テスト・静的解析・脆弱性スキャン・`terraform plan`（prod。読み取り専用） |
 | `deploy-prod.yml` | push tag `v*` | 承認後に prod へデプロイ |
-| `security-scheduled.yml` | 毎週月曜（cron） | 依存関係の再スキャン、DAST（dev 環境）→ [07](./07_security.md) |
+| `security-scheduled.yml` | 毎週月曜（cron） | 依存関係の再スキャン、DAST（本番にパッシブなベースラインスキャンのみ）→ [07](./07_security.md) |
 | `rollback.yml` | 手動（workflow_dispatch） | 指定バージョンへ Lambda エイリアス・Web を戻す |
 
 ---
@@ -85,14 +74,14 @@ flowchart LR
 
 ### 4.1 IAM ロール
 
-各AWSアカウントに、用途別にロールを分けて作る（最小権限）。
+1つのアカウントに、用途別にロールを分けて作る（最小権限。`infra/bootstrap` で作成）。
 
 | ロール | 使うワークフロー | 権限 | 信頼条件（`sub`） |
 | --- | --- | --- | --- |
-| `gha-plan-dev` | ci.yml | 読み取りのみ（ReadOnly + state 読み取り） | `repo:masuzuki1028/saigai-portal:pull_request` |
-| `gha-deploy-dev` | deploy-dev.yml | dev の Terraform 適用・Lambda/S3 更新 | `repo:masuzuki1028/saigai-portal:ref:refs/heads/main` |
-| `gha-plan-prod` | deploy-prod.yml | 読み取りのみ | `repo:masuzuki1028/saigai-portal:environment:prod-plan` |
-| `gha-deploy-prod` | deploy-prod.yml | prod の Terraform 適用・Lambda/S3 更新 | `repo:masuzuki1028/saigai-portal:environment:prod` |
+| `saigai-gha-plan` | ci.yml / deploy-prod.yml の plan | 読み取りのみ（ReadOnly + state 読み取り） | `repo:masuzuki1028/saigai-portal:pull_request`、`...:ref:refs/heads/main`、`...:environment:prod-plan` |
+| `saigai-gha-deploy` | deploy-prod.yml の deploy | prod の Terraform 適用・Lambda/S3 更新。IAM は `saigai-prod-*` のロール・ポリシーだけ | `repo:masuzuki1028/saigai-portal:environment:prod` |
+| `saigai-readonly` | 運営者（手元・Claude Code） | 読み取りのみ | 運営者用の IAM ユーザー（MFA） |
+| `saigai-admin` | 運営者（最初の構築・緊急時） | 管理者 | 運営者用の IAM ユーザー（MFA） |
 
 - **PR（フォークを含む）からは書き込み権限のロールを引き受けられない**ようにする
 - prod の書き込みロールは「`prod` Environment の承認を通ったジョブ」からのみ使える
@@ -105,7 +94,7 @@ flowchart LR
   "Version": "2012-10-17",
   "Statement": [{
     "Effect": "Allow",
-    "Principal": { "Federated": "arn:aws:iam::<PROD_ACCOUNT_ID>:oidc-provider/token.actions.githubusercontent.com" },
+    "Principal": { "Federated": "arn:aws:iam::<ACCOUNT_ID>:oidc-provider/token.actions.githubusercontent.com" },
     "Action": "sts:AssumeRoleWithWebIdentity",
     "Condition": {
       "StringEquals": {
@@ -122,6 +111,17 @@ flowchart LR
 ## 5. ワークフロー例（抜粋）
 
 > 外部 Action はタグではなく **コミットSHAで固定**する（改ざんされた Action の取り込みを防ぐ）。下記は読みやすさのためタグ表記。
+
+**公開リポジトリでの注意**（Actions のログと PR は誰でも読める）
+
+| 項目 | 方針 |
+| --- | --- |
+| 秘密の値 | トークン・パスワード・API キーは **Secrets** に置く（登録後は誰も値を見られず、ログでは伏せられる）。**Variables は平文でログにも出る**ため、公開されて困らない値だけに使う |
+| アカウント ID を含む値 | ロールの ARN・state のバケット名は秘密ではないが、ログに出さないよう Secrets に置く |
+| AWS の認証情報 | GitHub には置かない（OIDC）。アプリが使う外部 API のトークンは SSM Parameter Store（SecureString）に置く |
+| `terraform plan` | 全文を PR のコメント・ログ・アーティファクトに出さない（構成とアカウント ID が見えるため）。件数だけをジョブの要約に出し、全文は手元で `saigai-readonly` で確認する |
+| フォークからの PR | `pull_request` で動かす（フォークには Secrets も OIDC のトークンも渡らない）。`pull_request_target` は使わない |
+| 秘密情報の混入 | コミット前に gitleaks（`.githooks/pre-commit`）、CI でも gitleaks。万一 push したら、履歴から消すだけでなく、すぐにキーを無効化して作り直す |
 
 ### 5.1 `ci.yml`
 
@@ -184,23 +184,24 @@ jobs:
       - uses: actions/dependency-review-action@v4
         with: { fail-on-severity: high }
 
-  plan-dev:
+  plan:
     needs: [infra]
     runs-on: ubuntu-latest
     permissions:
       contents: read
       id-token: write        # OIDC
-      pull-requests: write   # plan 結果をコメント
+      # 公開リポジトリのため、plan の全文は PR のコメントにもログにも出さない（下の注意を参照）
     steps:
       - uses: actions/checkout@v4
       - uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ vars.DEV_PLAN_ROLE_ARN }}
+          role-to-assume: ${{ secrets.PLAN_ROLE_ARN }}   # アカウント ID を含むため Secrets に置く
           aws-region: ap-northeast-1
       - uses: hashicorp/setup-terraform@v3
-      - run: terraform -chdir=infra/envs/dev init -input=false
-      - run: terraform -chdir=infra/envs/dev plan -input=false -no-color -lock=false > plan.txt
-      # plan.txt を PR にコメント（機密値が出ないよう sensitive 指定を徹底）
+      - run: terraform -chdir=infra/envs/prod init -input=false -backend-config="bucket=${{ secrets.TF_STATE_BUCKET }}"
+      - run: terraform -chdir=infra/envs/prod plan -input=false -no-color -lock=false -out=tfplan > /dev/null
+      # 追加・変更・削除の件数だけをジョブの要約に出す
+      - run: terraform -chdir=infra/envs/prod show -json tfplan | jq -r '[.resource_changes[].change.actions | join(",")] | group_by(.) | map("\(.[0]): \(length)") | .[]' >> "$GITHUB_STEP_SUMMARY"
 ```
 
 ### 5.2 `deploy-prod.yml`（骨子）
@@ -267,7 +268,7 @@ jobs:
 
 ### 6.3 Terraform
 
-- `infra/envs/<env>` ごとに state を分離（各アカウントの S3、ネイティブロック）
+- state は `infra/bootstrap` で作る S3 バケットに置く（ネイティブロック）。bootstrap 自身の state も同じバケットに移す
 - prod は**plan したファイルをそのまま apply**（plan と apply の間に差分が入らないようにする）
 - `prevent_destroy` を DynamoDB テーブル・KMS キー・S3（データ系）に設定
 

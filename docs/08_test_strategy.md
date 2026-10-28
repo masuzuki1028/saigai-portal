@@ -13,7 +13,7 @@
 | **フロントはバックエンドなしで動かせる** | MSW（Mock Service Worker）で API をモックし、画面開発・コンポーネントテスト・E2E をバックエンドなしで実行できるようにする |
 | **CI から外部サービスを呼ばない** | 気象庁・P2P地震情報・国土地理院・SNS は、保存したレスポンス（fixture）で代替する。外部の障害やレート制限で CI が落ちないようにする |
 | **災害時の流れを再現できる** | 実際の電文 XML を順番に流し込み、取り込み → 突き合わせ → 通知までを手元で再現できるようにする |
-| **AWS の実環境での確認は dev で行う** | ローカルで再現しにくい部分（Cognito・IAM・CloudFront）は、dev へのデプロイ後に E2E で確認する |
+| **AWS の実環境での確認は本番で最小限に行う** | AWS には prod だけを作る（→ [05](./05_system_architecture.md) 6章）。ローカルで再現しにくい部分（Cognito・IAM・CloudFront）は、本番へのデプロイ後にテスト用のユーザーでスモークテストを行い、大きな変更は 09 のダークリリースで確認する |
 
 ---
 
@@ -30,7 +30,7 @@ flowchart TB
     AZ[api: 認可テスト<br/>全エンドポイント × 他人のデータ]
   end
 
-  subgraph Dev[dev 環境（main マージ後）]
+  subgraph Dev[本番（デプロイ後）]
     direction TB
     DE[E2E スモーク（本物の API）<br/>Playwright + テスト用ユーザー]
     DZ[DAST（週次）<br/>OWASP ZAP]
@@ -52,8 +52,8 @@ flowchart TB
 | ユニット / コンポーネント | フロントの関数・フック・コンポーネント | Vitest + React Testing Library + MSW | PR |
 | E2E（モック） | 主要な画面操作の流れ | Playwright + MSW | PR |
 | アクセシビリティ | 主要画面 | `@axe-core/playwright` | PR（E2E の中で実行） |
-| E2E（実環境） | ログイン〜地点登録〜タイムライン表示 | Playwright | main マージ後（dev） |
-| DAST | dev 環境 | OWASP ZAP ベースライン | 週次（→ [07](./07_security.md)） |
+| E2E（実環境） | ログイン〜地点登録〜タイムライン表示 | Playwright | 本番へのデプロイ後（テスト用のユーザー） |
+| DAST | 本番（パッシブ） | OWASP ZAP ベースライン | 週次（→ [07](./07_security.md)） |
 | 負荷 | API・CloudFront | k6 | Phase 2 以降、大きな変更の前に手動で実行 |
 
 ---
@@ -99,7 +99,7 @@ flowchart LR
 | 項目 | 内容 |
 | --- | --- |
 | 対象のビルド | `npm run build` で作った静的出力（`out/`）を、ローカルで配信してテストする。本番と同じ成果物を検証する |
-| API | PR では MSW でモックする。dev 環境では本物の API を使う |
+| API | PR では MSW でモックする。本番のスモークテストでは本物の API を使う |
 | 端末 | **スマホを優先**（iPhone・Android 相当のビューポート）。法人ダッシュボードのみ PC のビューポートでも確認する |
 | ブラウザ | Chromium + WebKit（iPhone の Safari を想定）。Firefox は必要になってから追加する |
 | 地図タイル | 国土地理院のタイルへのリクエストは `page.route` で止め、ダミーのタイルを返す。MSW の Service Worker を経由する通信は `page.route` で止められないため、自動テストのブラウザ（`navigator.webdriver`）では MSW でも止める。テストの最後に、外部のサーバーへの通信がなかったことを確認する |
@@ -113,10 +113,10 @@ flowchart LR
 3. 通知設定を変更してテスト送信する
 4. ログアウトすると、保護された画面にアクセスできない
 
-### 4.3 dev 環境での E2E
+### 4.3 本番でのスモークテスト（E2E）
 
-- `deploy-dev.yml` のデプロイ後に、上記シナリオのうち 1・2・4 を本物の Cognito・API に対して実行する
-- テスト用ユーザーは dev の Cognito にだけ作成し、資格情報は GitHub の Environment シークレットに置く
+- `deploy-prod.yml` のデプロイ後に、上記シナリオのうち 1・4 を本物の Cognito・API に対して、テスト用のユーザーで実行する（実際の利用者のデータには触れない）
+- テスト用ユーザーは本番の Cognito に1つだけ作り（地点の上限・通知はオフ）、資格情報は GitHub の Environment シークレットに置く
 - テストで作ったデータは、テストの最後に削除する（ユーザーごとのプレフィックスを付けて、消し漏れも `housekeeping` で掃除する）
 - トークンはメモリに保持する設計のため、Playwright の `storageState` によるログイン状態の使い回しはできない。各テストの最初にログインする（ログイン処理は共通の fixture にまとめる）
 
@@ -185,7 +185,7 @@ flowchart LR
 | --- | --- |
 | `ci.yml` / api | `go test -race -cover ./...` に加えて、DynamoDB Local をサービスコンテナで起動して `go test -tags=integration ./...`。OpenAPI から生成したコードに差分がないことの確認 |
 | `ci.yml` / web | `npm test`（Vitest）に加えて、Playwright E2E（モック API）。生成した型に差分がないことの確認 |
-| `deploy-dev.yml` | デプロイ後に Playwright E2E（実環境）を実行する |
+| `deploy-prod.yml` | デプロイ後に Playwright のスモークテスト（本番・テスト用のユーザー）を実行する |
 | `security-scheduled.yml` | Go のファジングを一定時間だけ実行する |
 
 - Playwright のブラウザはキャッシュし、変更があった部分だけ実行する（パスフィルタ）ことで、CI の実行時間を抑える
@@ -210,7 +210,7 @@ flowchart LR
 
 - [ ] Storybook を導入するか（画面のカタログ・見た目の確認用。MSW と組み合わせられる）
 - [ ] ビジュアルリグレッション（Playwright のスクリーンショット比較）を導入するか。地図部分は差分が出やすいため対象外にする前提
-- [ ] dev 環境の E2E で、通知の受信（メール）まで確認するか（SES の受信設定が必要）
+- [ ] 本番のスモークテストで、通知の受信（メール）まで確認するか（SES の受信設定が必要）
 - [ ] 負荷試験の目標値（警報発表時の同時アクセス数の想定）
 
 ---

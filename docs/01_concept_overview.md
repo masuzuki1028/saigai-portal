@@ -221,7 +221,7 @@ Lambda (Go) 収集ワーカー
 | 認証 | Cognito | 少人数なら無料枠内 |
 | 通知 | SES / Web Push / Slack Webhook | 従量課金・低額 |
 | 地図 | MapLibre GL + 無料タイル（国土地理院タイル等） | Google Maps の従量課金を避ける |
-| IaC | Terraform（S3 backend + S3ネイティブロック） | 環境: dev / prod を別AWSアカウントに分離 |
+| IaC | Terraform（S3 backend + S3ネイティブロック） | 個人の AWS アカウント1つに prod だけを作り、開発はローカルで行う（→ [05](./05_system_architecture.md) 6章） |
 | CI/CD | GitHub Actions（OIDCでAWS認証） | 詳細は [06](./06_deploy_flow.md) |
 
 **月額目標: MVP段階で 約$15〜25/月**（セキュリティ対策込み。内訳は [05](./05_system_architecture.md) 7章）
