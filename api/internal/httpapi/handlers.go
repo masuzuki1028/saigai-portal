@@ -63,7 +63,8 @@ func (s *Server) SendTestNotification(ctx context.Context, _ apigen.SendTestNoti
 	return apigen.SendTestNotification202Response{}, nil
 }
 
-// DeleteAccount は退会する。認証基盤（Cognito）のユーザーの削除は AWS への構築時に追加する。
+// DeleteAccount は退会する。データを消してから、認証基盤（Cognito）のユーザーを削除する。
+// 認証基盤の削除に失敗しても、データは消えている（再びログインすると新しい利用者として扱われる）。
 func (s *Server) DeleteAccount(ctx context.Context, _ apigen.DeleteAccountRequestObject) (apigen.DeleteAccountResponseObject, error) {
 	u, err := mustUser(ctx)
 	if err != nil {
@@ -71,6 +72,11 @@ func (s *Server) DeleteAccount(ctx context.Context, _ apigen.DeleteAccountReques
 	}
 	if err := s.Store.DeleteUserData(ctx, u); err != nil {
 		return nil, err
+	}
+	if s.Accounts != nil {
+		if err := s.Accounts.DeleteUser(ctx, u.Principal()); err != nil {
+			return nil, err
+		}
 	}
 	s.Log.Info("account deleted", "userId", u.ID)
 	return apigen.DeleteAccount204Response{}, nil

@@ -155,6 +155,7 @@ func toEvent(it item) (*domain.Event, error) {
 // Store は取り込みに使う store の操作。
 type Store interface {
 	PutEventIfAbsent(ctx context.Context, ev *domain.Event) (bool, error)
+	DeleteEvent(ctx context.Context, id string) error
 }
 
 // Ingester は P2P地震情報の履歴を取得して取り込む。
@@ -211,7 +212,8 @@ func (in *Ingester) Ingest(ctx context.Context, data []byte) (int, error) {
 		n++
 		if in.OnEvent != nil {
 			if err := in.OnEvent(ctx, ev); err != nil {
-				errs = append(errs, err)
+				// 次の取り込みでもう一度処理する
+				errs = append(errs, err, in.Store.DeleteEvent(ctx, ev.ID))
 			}
 		}
 	}

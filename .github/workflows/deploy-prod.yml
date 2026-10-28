@@ -1,0 +1,155 @@
+# リリースタグ（v1.2.3）を作ると、承認のあとで prod にデプロイする（docs/06_deploy_flow.md 3章・5.2）。
+#
+# 1. plan（Environment: prod-plan）: 読み取り専用のロールで terraform plan。件数だけをジョブの要約に出す
+# 2. deploy（Environment: prod。承認が必要）: plan をやり直し、承認前の plan と同じ内容なら apply →
+#    Lambda のデプロイ → 画面のデプロイ → スモークテスト。失敗したら Lambda の live エイリアスを戻す
+#
+# 公開リポジトリのため、plan の全文・ARN・アカウント ID をログに出さない（docs/06 5章）。
+# plan のファイルは state の値を含むため、アーティファクトにせず、deploy のジョブで作り直す。
+# 外部の Action はコミット SHA で固定する（docs/07_security.md 4.2）。
+name: deploy-prod
+
+on:
+  push:
+    tags: ["v*.*.*"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-prod
+  cancel-in-progress: false # 本番のデプロイは並べて走らせない
+
+env:
+  AWS_REGION: ap-northeast-1
+  TF_DIR: infra/envs/prod
+  FUNCTION_PREFIX: saigai-prod
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    environment: prod-plan
+    permissions:
+      contents: read
+      id-token: write
+    outputs:
+      count: ${{ steps.plan.outputs.count }}
+      hash: ${{ steps.plan.outputs.hash }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
+        with:
+          role-to-assume: ${{ secrets.PLAN_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+          mask-aws-account-id: true
+      - id: tfver
+        run: echo "version=$(cat infra/.terraform-version)" >> "$GITHUB_OUTPUT"
+      - uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4.0.1
+        with:
+          terraform_version: ${{ steps.tfver.outputs.version }}
+          terraform_wrapper: false # ラッパーはコマンドの出力をログに出すため使わない
+      - id: plan
+        name: terraform plan（件数だけを要約に出す）
+        run: .github/scripts/tf-plan.sh "$TF_DIR" -lock=false
+        env:
+          TF_STATE_BUCKET: ${{ secrets.TF_STATE_BUCKET }}
+          TF_VARS: ${{ secrets.TF_VARS_PROD }}
+
+  deploy:
+    needs: plan
+    runs-on: ubuntu-latest
+    environment: prod # 承認者のレビューを必須にする
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
+        with:
+          role-to-assume: ${{ secrets.DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+          mask-aws-account-id: true
+      - id: tfver
+        run: echo "version=$(cat infra/.terraform-version)" >> "$GITHUB_OUTPUT"
+      - uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4.0.1
+        with:
+          terraform_version: ${{ steps.tfver.outputs.version }}
+          terraform_wrapper: false
+
+      # --- インフラ ---
+      - id: plan
+        name: terraform plan（承認後にやり直す）
+        run: .github/scripts/tf-plan.sh "$TF_DIR"
+        env:
+          TF_STATE_BUCKET: ${{ secrets.TF_STATE_BUCKET }}
+          TF_VARS: ${{ secrets.TF_VARS_PROD }}
+      - name: 承認前の plan と同じ内容であること
+        run: |
+          if [[ "$BEFORE" != "$AFTER" ]]; then
+            echo "承認のあとで plan の内容が変わりました。タグを作り直してやり直してください" >&2
+            exit 1
+          fi
+        env:
+          BEFORE: ${{ needs.plan.outputs.hash }}
+          AFTER: ${{ steps.plan.outputs.hash }}
+      - name: terraform apply
+        if: steps.plan.outputs.count != '0'
+        working-directory: ${{ env.TF_DIR }}
+        run: |
+          log=$(mktemp)
+          if ! terraform apply -input=false -no-color tfplan > "$log" 2>&1; then
+            grep -E '^(Error|│|╷|╵)' "$log" >&2 || tail -n 5 "$log" >&2
+            exit 1
+          fi
+          grep -E '^Apply complete' "$log"
+      - name: デプロイ先を読む
+        working-directory: ${{ env.TF_DIR }}
+        run: |
+          terraform output -json > "$RUNNER_TEMP/tf.json"
+          read_out() { jq -r "$1" "$RUNNER_TEMP/tf.json"; }
+          for v in "$(read_out .app_url.value)" "$(read_out .web_bucket.value)" "$(read_out .cloudfront_distribution_id.value)" "$(read_out .cognito.value.login_origin)" "$(read_out .cognito.value.client_id)"; do
+            echo "::add-mask::$v"
+          done
+          {
+            echo "APP_URL=$(read_out .app_url.value)"
+            echo "WEB_BUCKET=$(read_out .web_bucket.value)"
+            echo "DISTRIBUTION_ID=$(read_out .cloudfront_distribution_id.value)"
+            echo "NEXT_PUBLIC_COGNITO_DOMAIN=$(read_out .cognito.value.login_origin)"
+            echo "NEXT_PUBLIC_COGNITO_CLIENT_ID=$(read_out .cognito.value.client_id)"
+          } >> "$GITHUB_ENV"
+
+      # --- Lambda ---
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: api/go.mod
+          cache-dependency-path: api/go.sum
+      - name: Lambda のビルド（arm64）
+        working-directory: api
+        run: ../.github/scripts/build-lambda.sh "$RUNNER_TEMP/lambda"
+
+      # --- 画面 ---
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: web/.nvmrc
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - name: 画面のビルド
+        working-directory: web
+        run: |
+          if [[ -z "$NEXT_PUBLIC_COGNITO_DOMAIN" || -z "$NEXT_PUBLIC_COGNITO_CLIENT_ID" ]]; then
+            echo "Cognito の設定がありません（ローカル用のログインのまま公開しない）" >&2
+            exit 1
+          fi
+          npm ci --ignore-scripts
+          npm run build
+
+      # --- デプロイ（API を先に更新し、新しい画面が新しい API を使えるようにする） ---
+      - name: Lambda のデプロイ
+        run: .github/scripts/deploy-lambda.sh "$RUNNER_TEMP/lambda" "$RUNNER_TEMP/lambda-previous.txt"
+      - name: 画面のデプロイ
+        run: .github/scripts/deploy-web.sh web/out
+      - name: スモークテスト
+        run: .github/scripts/smoke.sh "$APP_URL"
+      - name: 失敗したら Lambda を切り替え前のバージョンに戻す
+        if: failure()
+        run: .github/scripts/rollback-lambda.sh "$RUNNER_TEMP/lambda-previous.txt"

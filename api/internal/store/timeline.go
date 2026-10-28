@@ -238,6 +238,13 @@ func (s *Store) PutEventIfAbsent(ctx context.Context, ev *domain.Event) (bool, e
 	return err == nil, err
 }
 
+// DeleteEvent は保存した電文の記録を消す。後続の処理（match-queue への送信）に失敗したときに呼び、
+// 次の取り込みで同じ電文をもう一度処理できるようにする。
+func (s *Store) DeleteEvent(ctx context.Context, id string) error {
+	_, err := s.DB.DeleteItem(ctx, &dynamodb.DeleteItemInput{TableName: &s.Tables.Events, Key: key(eventPK(id), "V#1")})
+	return err
+}
+
 // IngestCursor は取り込み処理の進捗（docs/04 5.1）。
 type IngestCursor struct {
 	Source       string    `dynamodbav:"source"`

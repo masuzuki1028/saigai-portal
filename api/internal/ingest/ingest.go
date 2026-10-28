@@ -19,6 +19,7 @@ import (
 type Store interface {
 	EventExists(ctx context.Context, id string) (bool, error)
 	PutEventIfAbsent(ctx context.Context, ev *domain.Event) (bool, error)
+	DeleteEvent(ctx context.Context, id string) error
 	GetCursor(ctx context.Context, source string) (store.IngestCursor, error)
 	PutCursor(ctx context.Context, c store.IngestCursor) error
 }
@@ -142,8 +143,15 @@ func (in *Ingester) Ingest(ctx context.Context, data []byte, telegramID string, 
 		return nil
 	}
 	st.New++
-	if in.OnEvent != nil {
-		return in.OnEvent(ctx, ev)
+	if in.OnEvent == nil {
+		return nil
+	}
+	if err := in.OnEvent(ctx, ev); err != nil {
+		// 次の取り込みでもう一度処理する（後続の処理は同じ電文を2回受け取っても重複しない）
+		if derr := in.Store.DeleteEvent(ctx, ev.ID); derr != nil {
+			return errors.Join(err, derr)
+		}
+		return err
 	}
 	return nil
 }
