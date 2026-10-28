@@ -10,7 +10,7 @@
 | `saigai-gha-deploy` | CI のデプロイ用。GitHub の Environment「prod」の承認後だけ。IAM は `saigai-prod-*` だけで、作るロールには権限の上限（`saigai-prod-boundary`）が必須 |
 | `saigai-readonly` | 運営者の普段使い（Claude Code の plan もこれ）。読み取り専用（本番のデータは読めない） |
 | `saigai-admin` | 運営者の最初の構築・緊急時用 |
-| 運営者の IAM ユーザーのポリシー | 上の2つのロールの引き受けと、自分のパスワード・MFA の管理だけ |
+| 運営者の IAM ユーザーのポリシー | 上の2つのロールの引き受けと、自分のパスワード・MFA の管理だけ。`aws login` 用に AWS 管理ポリシー `SignInLocalDevelopmentAccess` も付ける |
 
 ## 前提
 
@@ -57,7 +57,8 @@ rm -f terraform.tfstate terraform.tfstate.backup tfplan   # 移したら手元�
 
 ### 5. 管理者権限を外し、ロールで操作する
 
-1. コンソールで、IAM ユーザーから `AdministratorAccess` を外す（`saigai-operator` のポリシーだけになる）
+1. コンソールで、IAM ユーザーから `AdministratorAccess` を外す（`saigai-operator` のインラインポリシーと `SignInLocalDevelopmentAccess` だけになる）。
+   `SignInLocalDevelopmentAccess` が付いていないと、`aws login` のログイン状態を更新できなくなる（`signin:CreateOAuth2Token` がないというエラー）
 2. `terraform output -raw aws_config` の内容を `~/.aws/config` に追記する
 3. 確認する
 
