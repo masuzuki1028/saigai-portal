@@ -1,0 +1,4 @@
+#!/bin/sh
+# 最初の terraform apply で Lambda を作るための仮のコード。実際のコードは CI（deploy-prod.yml）がデプロイする
+echo "saigai: コードがまだデプロイされていません" >&2
+exit 1

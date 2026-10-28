@@ -1,0 +1,10 @@
+# terraform.tfvars にコピーして値を入れる（.gitignore 済み。公開リポジトリに載せない）
+account_id  = "123456789012"
+root_domain = "example.com"
+alarm_email = "alerts@example.com"
+
+# 新しいドメインを取得し、SES の準備ができたら true
+# enable_ses = false
+
+# 最初のデプロイが終わったら true（取り込みの定期実行を動かす）
+# ingest_enabled = false
