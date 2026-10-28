@@ -78,6 +78,19 @@ data "aws_iam_policy_document" "operator_user" {
   }
 }
 
+# aws login（コンソールのサインインで CLI の一時クレデンシャルを得る）に必要な権限。
+# signin:AuthorizeOAuth2Access と signin:CreateOAuth2Token だけを含む AWS 管理ポリシー
+resource "aws_iam_user_policy_attachment" "operator_signin" {
+  user       = data.aws_iam_user.operator.user_name
+  policy_arn = "arn:aws:iam::aws:policy/SignInLocalDevelopmentAccess"
+}
+
+# 最初は管理者権限が外れたあとにルートユーザーで手で付けたため、Terraform の管理下に取り込む
+import {
+  to = aws_iam_user_policy_attachment.operator_signin
+  id = "${var.operator_user_name}/arn:aws:iam::aws:policy/SignInLocalDevelopmentAccess"
+}
+
 resource "aws_iam_user_policy" "operator" {
   name   = "saigai-operator"
   user   = data.aws_iam_user.operator.user_name
