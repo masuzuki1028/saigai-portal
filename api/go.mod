@@ -16,7 +16,7 @@ require (
 	github.com/mmcloughlin/geohash v0.10.0
 	github.com/oapi-codegen/nethttp-middleware v1.2.0
 	github.com/oapi-codegen/runtime v1.7.0
-	github.com/oklog/ulid/v2 v2.1.1
+	github.com/oklog/ulid/v2 v2.1.2
 )
 
 require (
