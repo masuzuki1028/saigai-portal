@@ -3,8 +3,8 @@ account_id  = "123456789012"
 root_domain = "example.com"
 alarm_email = "alerts@example.com"
 
-# 新しいドメインを取得し、SES の準備ができたら true
-# enable_ses = false
+# SES: ドメインの認証を作って本番利用を申請し、承認されたら production
+# ses_mode = "off" # off → identity（本番利用を申請）→ production（承認後）
 
 # 最初のデプロイが終わったら true（取り込みの定期実行を動かす）
 # ingest_enabled = false

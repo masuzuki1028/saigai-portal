@@ -26,11 +26,11 @@ resource "aws_cognito_user_pool" "this" {
     }
   }
 
-  # SES を有効にするまでは Cognito の標準の送信（1日 50 通まで）を使う
+  # SES の本番利用が承認されるまでは Cognito の標準の送信（1日 50 通まで）を使う（ses.tf）
   email_configuration {
-    email_sending_account = var.enable_ses ? "DEVELOPER" : "COGNITO_DEFAULT"
-    source_arn            = var.enable_ses ? aws_sesv2_email_identity.app[0].arn : null
-    from_email_address    = var.enable_ses ? "saigai-timeline <${local.mail_from}>" : null
+    email_sending_account = local.ses_sending ? "DEVELOPER" : "COGNITO_DEFAULT"
+    source_arn            = local.ses_sending ? aws_sesv2_email_identity.app[0].arn : null
+    from_email_address    = local.ses_sending ? "saigai-timeline <${local.mail_from}>" : null
   }
 
   user_attribute_update_settings {
@@ -40,6 +40,9 @@ resource "aws_cognito_user_pool" "this" {
   admin_create_user_config {
     allow_admin_create_user_only = false
   }
+
+  # SES から送るときは、Cognito に送信を許可するポリシーを先に付ける
+  depends_on = [aws_sesv2_email_identity_policy.cognito]
 
   lifecycle {
     prevent_destroy = true

@@ -114,7 +114,7 @@ locals {
       COGNITO_USER_POOL_ID = aws_cognito_user_pool.this.id
       COGNITO_ISSUER       = "https://cognito-idp.${var.region}.amazonaws.com/${aws_cognito_user_pool.this.id}"
       MAIL_FROM            = local.mail_from
-      SES_ENABLED          = tostring(var.enable_ses)
+      SES_ENABLED          = tostring(local.ses_sending)
     }
     ingest-jma = {
       MATCH_QUEUE_URL = aws_sqs_queue.this["match"].url
@@ -128,7 +128,7 @@ locals {
     notifier = {
       COGNITO_USER_POOL_ID = aws_cognito_user_pool.this.id
       MAIL_FROM            = local.mail_from
-      SES_ENABLED          = tostring(var.enable_ses)
+      SES_ENABLED          = tostring(local.ses_sending)
     }
   }
 }
@@ -160,7 +160,7 @@ data "aws_iam_policy_document" "api" {
     resources = [aws_cognito_user_pool.this.arn]
   }
   dynamic "statement" {
-    for_each = var.enable_ses ? [1] : []
+    for_each = local.ses_sending ? [1] : []
     content {
       sid       = "SendTestMail"
       actions   = ["ses:SendEmail"]
@@ -253,7 +253,7 @@ data "aws_iam_policy_document" "notifier" {
     resources = [aws_sqs_queue.this["notify"].arn]
   }
   dynamic "statement" {
-    for_each = var.enable_ses ? [1] : []
+    for_each = local.ses_sending ? [1] : []
     content {
       sid       = "SendMail"
       actions   = ["ses:SendEmail"]

@@ -32,10 +32,20 @@ variable "alarm_email" {
   type        = string
 }
 
-variable "enable_ses" {
-  description = "SES でメールを送る（ドメインの認証と本番利用の申請のあとで true にする）。false の間は通知メールを送らずに記録だけ残す"
-  type        = bool
-  default     = false
+variable "ses_mode" {
+  description = <<-EOT
+    SES の使い方（ses.tf）。
+    off: 使わない（通知メールは送らずに記録だけ残す。Cognito の確認メールは Cognito の標準の送信）
+    identity: ドメインの認証だけを作る。SES の本番利用（サンドボックスの解除）を申請できる状態にする。送信は off と同じ
+    production: 本番利用が承認されてから。通知メールと Cognito の確認メールを SES から送る
+  EOT
+  type        = string
+  default     = "off"
+
+  validation {
+    condition     = contains(["off", "identity", "production"], var.ses_mode)
+    error_message = "ses_mode は off・identity・production のどれかにしてください"
+  }
 }
 
 variable "permissions_boundary_name" {
