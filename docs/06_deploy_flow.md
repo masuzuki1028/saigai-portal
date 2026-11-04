@@ -78,14 +78,15 @@ flowchart LR
 
 | ロール | 使うワークフロー | 権限 | 信頼条件（`sub`） |
 | --- | --- | --- | --- |
-| `saigai-gha-plan` | ci.yml / deploy-prod.yml の plan | 読み取りのみ（ReadOnly + state 読み取り） | `repo:masuzuki1028/saigai-portal:pull_request`、`...:ref:refs/heads/main`、`...:environment:prod-plan` |
-| `saigai-gha-deploy` | deploy-prod.yml の deploy | prod の Terraform 適用・Lambda/S3 更新。IAM は `saigai-prod-*` のロール・ポリシーだけ | `repo:masuzuki1028/saigai-portal:environment:prod` |
+| `saigai-gha-plan` | ci.yml / deploy-prod.yml の plan | 読み取りのみ（ReadOnly + state 読み取り） | `repo:masuzuki1028@37284283/saigai-portal@1416713819:pull_request`、`...:ref:refs/heads/main`、`...:environment:prod-plan` |
+| `saigai-gha-deploy` | deploy-prod.yml の deploy | prod の Terraform 適用・Lambda/S3 更新。IAM は `saigai-prod-*` のロール・ポリシーだけ | `repo:masuzuki1028@37284283/saigai-portal@1416713819:environment:prod` |
 | `saigai-readonly` | 運営者（手元・Claude Code） | 読み取りのみ | 運営者用の IAM ユーザー（MFA） |
 | `saigai-admin` | 運営者（最初の構築・緊急時） | 管理者 | 運営者用の IAM ユーザー（MFA） |
 
 - **PR（フォークを含む）からは書き込み権限のロールを引き受けられない**ようにする
 - prod の書き込みロールは「`prod` Environment の承認を通ったジョブ」からのみ使える
 - 適用ロールでも IAM 系の権限は対象リソース（`saigai-*`）に限定し、Permissions Boundary を付ける
+- `sub` は「名前@数値 ID」の形式（2026-07-15 以降に作ったリポジトリの初期値）。名前だけの形式は、リポジトリ名を手放したあとに同じ名前を取った別のリポジトリと区別できない。ID は `infra/bootstrap/variables.tf` に置く（公開の値）
 
 ### 4.2 信頼ポリシー例（prod デプロイ用）
 
@@ -99,7 +100,7 @@ flowchart LR
     "Condition": {
       "StringEquals": {
         "token.actions.githubusercontent.com:aud": "sts.amazonaws.com",
-        "token.actions.githubusercontent.com:sub": "repo:masuzuki1028/saigai-portal:environment:prod"
+        "token.actions.githubusercontent.com:sub": "repo:masuzuki1028@37284283/saigai-portal@1416713819:environment:prod"
       }
     }
   }]

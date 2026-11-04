@@ -45,9 +45,9 @@ beforeEach(() => {
     http.post(`${DOMAIN}/oauth2/token`, async ({ request }) => {
       const body = new URLSearchParams(await request.text());
       tokenRequests.push(body);
-      if (body.get("grant_type") === "refresh_token") return HttpResponse.json({ access_token: "AT2", expires_in: 3600 });
+      if (body.get("grant_type") === "refresh_token") return HttpResponse.json({ access_token: "access-token-2", expires_in: 3600 });
       // 期限が近いアクセストークンを返し、次の API の呼び出しでリフレッシュさせる
-      return HttpResponse.json({ access_token: "AT1", refresh_token: "RT", id_token: idToken({ email: "a@example.com" }), expires_in: 30 });
+      return HttpResponse.json({ access_token: "access-token-1", refresh_token: "refresh-token", id_token: idToken({ email: "a@example.com" }), expires_in: 30 });
     }),
     http.post(`${DOMAIN}/oauth2/revoke`, () => new HttpResponse(null, { status: 200 })),
     http.get("*/api/me", ({ request }) => {
@@ -74,12 +74,13 @@ describe("AuthProvider（Cognito）", () => {
     expect(await screen.findByText("ログイン中: a@example.com")).toBeInTheDocument();
 
     await userEvent.click(screen.getByRole("button", { name: "call" }));
-    await waitFor(() => expect(apiAuth).toEqual(["Bearer AT2"]));
+    await waitFor(() => expect(apiAuth).toEqual(["Bearer access-token-2"]));
     expect(tokenRequests.map((b) => b.get("grant_type"))).toEqual(["authorization_code", "refresh_token"]);
-    expect(tokenRequests[1]?.get("refresh_token")).toBe("RT");
+    expect(tokenRequests[1]?.get("refresh_token")).toBe("refresh-token");
 
+    // PKCE の値（乱数）と偶然一致しないよう、トークンは長い値にしている
     const stored = setItem.mock.calls.map((c) => String(c[1]));
-    expect(stored.some((v) => /AT1|AT2|RT/.test(v))).toBe(false);
+    expect(stored.some((v) => /access-token|refresh-token/.test(v))).toBe(false);
     // eslint-disable-next-line no-restricted-properties -- 保存されていないことの確認のために参照する
     expect(window.localStorage.length).toBe(0);
 
@@ -94,7 +95,7 @@ describe("AuthProvider（Cognito）", () => {
     server.use(http.post(`${DOMAIN}/oauth2/token`, async ({ request }) => {
       const body = new URLSearchParams(await request.text());
       if (body.get("grant_type") === "refresh_token") return HttpResponse.json({ error: "invalid_grant" }, { status: 400 });
-      return HttpResponse.json({ access_token: "AT1", refresh_token: "RT", expires_in: 30 });
+      return HttpResponse.json({ access_token: "access-token-1", refresh_token: "refresh-token", expires_in: 30 });
     }));
     render(
       <AuthProvider>
