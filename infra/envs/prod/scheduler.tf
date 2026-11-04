@@ -1,4 +1,4 @@
-# 取り込みを1分ごとに起動する（docs/05 3.4）
+# 取り込みを ingest_interval_minutes ごとに起動する（docs/05 3.4）
 data "aws_iam_policy_document" "scheduler_assume" {
   statement {
     actions = ["sts:AssumeRole"]
@@ -37,7 +37,7 @@ resource "aws_scheduler_schedule" "ingest" {
   for_each = toset(["ingest-jma", "ingest-quake"])
 
   name                         = "${local.prefix}-${each.key}"
-  schedule_expression          = "rate(1 minute)"
+  schedule_expression          = var.ingest_interval_minutes == 1 ? "rate(1 minute)" : "rate(${var.ingest_interval_minutes} minutes)"
   schedule_expression_timezone = "Asia/Tokyo"
   # 最初はコードがデプロイされていないため止めておき、最初のデプロイのあとで ENABLED にする
   state = var.ingest_enabled ? "ENABLED" : "DISABLED"
@@ -50,7 +50,7 @@ resource "aws_scheduler_schedule" "ingest" {
     arn      = aws_lambda_alias.live[each.key].arn
     role_arn = aws_iam_role.scheduler.arn
     retry_policy {
-      maximum_retry_attempts       = 0 # 次の1分後の実行で取り直す
+      maximum_retry_attempts       = 0 # 次の実行で取り直す
       maximum_event_age_in_seconds = 60
     }
   }

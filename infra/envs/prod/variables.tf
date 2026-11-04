@@ -49,3 +49,14 @@ variable "ingest_enabled" {
   type        = bool
   default     = false
 }
+
+variable "ingest_interval_minutes" {
+  description = "取り込みの間隔（分）。公開前は費用を抑えて5分、公開したら1分にする。気象庁の高頻度フィードには直近約10分の電文しか載らないため、5分より長くしない"
+  type        = number
+  default     = 5
+
+  validation {
+    condition     = var.ingest_interval_minutes >= 1 && var.ingest_interval_minutes <= 5 && floor(var.ingest_interval_minutes) == var.ingest_interval_minutes
+    error_message = "ingest_interval_minutes は 1〜5 の整数にしてください"
+  }
+}

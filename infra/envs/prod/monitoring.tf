@@ -10,16 +10,21 @@ resource "aws_sns_topic_subscription" "alarms_email" {
   endpoint  = var.alarm_email
 }
 
-# 取り込みの停止（最重要）: 5分間、成功した実行がない
+locals {
+  ingest_alarm_period = max(300, var.ingest_interval_minutes * 60 * 2)
+}
+
+# 取り込みの停止（最重要）: 取り込みの間隔の2倍（最低5分）の間、実行がない。
+# 間隔と同じ長さで判定すると、実行のタイミングによって1回も入らない区間ができて誤って鳴るため、2倍にする
 resource "aws_cloudwatch_metric_alarm" "ingest_stopped" {
   for_each            = var.ingest_enabled ? toset(["ingest-jma", "ingest-quake"]) : toset([])
   alarm_name          = "${local.prefix}-${each.key}-stopped"
-  alarm_description   = "${each.key} が5分間正常に動いていない（取り込みの停止）"
+  alarm_description   = "${each.key} が${local.ingest_alarm_period / 60}分間正常に動いていない（取り込みの停止）"
   namespace           = "AWS/Lambda"
   metric_name         = "Invocations"
   dimensions          = { FunctionName = aws_lambda_function.fn[each.key].function_name }
   statistic           = "Sum"
-  period              = 300
+  period              = local.ingest_alarm_period
   evaluation_periods  = 1
   threshold           = 1
   comparison_operator = "LessThanThreshold"

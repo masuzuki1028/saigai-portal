@@ -125,8 +125,8 @@ flowchart TB
 | 関数 | トリガー | 役割 | 同時実行上限 |
 | --- | --- | --- | --- |
 | `api` | API Gateway | REST API 全般（1バイナリ内でルーティング） | 50（予約なし・上限のみ） |
-| `ingest-jma` | Scheduler 1分 | 気象庁XMLフィード（Atom）を取得し、新規電文を解析・正規化して `events` に保存、`match-queue` へ投入 | 1 |
-| `ingest-quake` | Scheduler 1分 | P2P地震情報 API から地震情報を取得（気象庁XMLの補完・冗長化）。観測点の名前から市区町村を引き、同じ地震は発生時刻＋震央地名で識別して重複させない。津波は気象庁 XML だけで扱う | 1 |
+| `ingest-jma` | Scheduler 1〜5分（※） | 気象庁XMLフィード（Atom）を取得し、新規電文を解析・正規化して `events` に保存、`match-queue` へ投入 | 1 |
+| `ingest-quake` | Scheduler 1〜5分（※） | P2P地震情報 API から地震情報を取得（気象庁XMLの補完・冗長化）。観測点の名前から市区町村を引き、同じ地震は発生時刻＋震央地名で識別して重複させない。津波は気象庁 XML だけで扱う | 1 |
 | `ingest-sns` | Scheduler 5分（Phase 2） | 警報級が出ているエリアの地名＋キーワードで Threads / Bluesky を検索 | 1 |
 | `matcher` | SQS | イベントのエリアコード → AreaIndex を引き、しきい値判定 → `timeline` 書き込み、通知対象を `notify-queue` へ | 10 |
 | `notifier` | SQS | 通知先ごとに送信。失敗はリトライ → DLQ | 10 |
@@ -150,7 +150,7 @@ sequenceDiagram
   participant T as timeline
   participant N as notifier
 
-  S->>I: 1分ごとに起動
+  S->>I: 1〜5分ごとに起動
   I->>J: Atomフィード取得（If-Modified-Since）
   J-->>I: 新着電文一覧
   I->>J: 新着電文XMLを取得
@@ -173,8 +173,8 @@ sequenceDiagram
 
 | ソース | 取得方法 | 間隔 | 備考 |
 | --- | --- | --- | --- |
-| 気象庁 防災情報XML | PULL型 Atom フィード | 1分 | 高頻度フィードを差分取得。利用規約・出典表記を守る |
-| P2P地震情報 API | REST（履歴取得） | 1分 | WebSocket はLambdaで常時接続できないため使わない |
+| 気象庁 防災情報XML | PULL型 Atom フィード | 1〜5分（※） | 高頻度フィードを差分取得。利用規約・出典表記を守る |
+| P2P地震情報 API | REST（履歴取得） | 1〜5分（※） | WebSocket はLambdaで常時接続できないため使わない |
 | Threads API | キーワード検索 | 5分（警報級のときのみ） | 権限審査・レート制限は要確認 |
 | Bluesky | 公開検索API | 5分（警報級のときのみ） | Firehose 常時購読は常駐プロセスが必要なため見送り |
 | 国土地理院 逆ジオコーダ | REST | 地点登録時のみ | 結果は保存し、繰り返し呼ばない |
@@ -182,6 +182,8 @@ sequenceDiagram
 | 気象庁 津波予報区の GIS データ | 同梱（`api/internal/area/tsunami.json`） | データ更新時に手動で再生成 | 沿岸の地点の判定に使う |
 | 気象庁 市町村等（気象警報等）の GIS データ | 同梱（`web/public/geo/warn/*.json`、`api/internal/area/warnkeys.json`） | データ更新時に手動で再生成（`genwarnmap`） | 地図の区域の塗りと、政令指定都市の発表単位の判定に使う。約 230MB を間引いて都道府県ごとに分け、合計約 3MB |
 
+> ※ 取り込みの間隔は Terraform の `ingest_interval_minutes` で決める。公開前は費用を抑えて5分、公開したら1分にする。気象庁の高頻度フィードには直近約10分の電文しか載らないため、5分より長くしない。取り込みの停止のアラームは、間隔の2倍（最低5分）の間に実行がなければ鳴らす
+>
 > **リアルタイム性の割り切り**: 定期取得のため、発表から表示まで最大1〜2分の遅れがある。緊急地震速報のような秒単位の速報は対象外とし、画面と規約に明記する。
 
 ---
@@ -190,7 +192,7 @@ sequenceDiagram
 
 | 監視項目 | 方法 | 通知先 |
 | --- | --- | --- |
-| **取り込みの停止**（最重要） | 各ソースの最終取得成功時刻をカスタムメトリクス化し、5分以上更新がなければアラーム | 運営者メール / Slack |
+| **取り込みの停止**（最重要） | 各ソースの最終取得成功時刻をカスタムメトリクス化し、取り込みの間隔の2倍（最低5分）の間更新がなければアラーム（MVP では Lambda の実行回数で代用） | 運営者メール / Slack |
 | Lambda エラー率 | CloudWatch アラーム | 同上 |
 | DLQ にメッセージが溜まった | ApproximateNumberOfMessagesVisible > 0 | 同上 |
 | API 5xx / レイテンシ | API Gateway メトリクス | 同上 |
