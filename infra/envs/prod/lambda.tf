@@ -284,7 +284,7 @@ resource "aws_iam_role_policy" "fn" {
   policy   = local.function_policies[each.key]
 }
 
-# 取り込みは1分ごとに呼ばれるため、失敗しても Lambda の非同期呼び出しの再試行はしない（次の実行で取り直す）
+# 取り込みは定期的に呼ばれるため、失敗しても Lambda の非同期呼び出しの再試行はしない（次の実行で取り直す）
 resource "aws_lambda_function_event_invoke_config" "ingest" {
   for_each                     = toset(["ingest-jma", "ingest-quake"])
   function_name                = aws_lambda_function.fn[each.key].function_name
