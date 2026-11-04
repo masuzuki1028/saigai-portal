@@ -1,6 +1,6 @@
 // Package crypto は正確な座標・住所などをアプリ層で暗号化する（docs/07_security.md 3.5）。
 //
-// 本番では KMS のデータキーによるエンベロープ暗号化を使う（AWS への構築時に実装する）。
+// 本番は KMS のデータキーによるエンベロープ暗号化（KMS）を使う。
 // ローカルとテストでは、固定の鍵で AES-GCM を使う AESGCM を使う。
 package crypto
 

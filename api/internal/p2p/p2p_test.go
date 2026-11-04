@@ -85,6 +85,11 @@ func (f fakeStore) PutEventIfAbsent(_ context.Context, ev *domain.Event) (bool, 
 	return true, nil
 }
 
+func (f fakeStore) DeleteEvent(_ context.Context, id string) error {
+	delete(f, id)
+	return nil
+}
+
 func TestIngestIsIdempotent(t *testing.T) {
 	data, _ := os.ReadFile("testdata/history_551.json")
 	got := 0

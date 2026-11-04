@@ -176,8 +176,9 @@ data "aws_iam_policy_document" "api" {
 
 data "aws_iam_policy_document" "ingest" {
   statement {
-    sid       = "Events"
-    actions   = ["dynamodb:GetItem", "dynamodb:PutItem"]
+    sid = "Events"
+    # DeleteItem は match-queue への送信に失敗したときに電文の記録を消し、次の取り込みでやり直すため
+    actions   = ["dynamodb:GetItem", "dynamodb:PutItem", "dynamodb:DeleteItem"]
     resources = [local.table_arns["events"]]
   }
   statement {
@@ -281,6 +282,15 @@ resource "aws_iam_role_policy" "fn" {
   name     = "app"
   role     = aws_iam_role.fn[each.key].id
   policy   = local.function_policies[each.key]
+}
+
+# 取り込みは1分ごとに呼ばれるため、失敗しても Lambda の非同期呼び出しの再試行はしない（次の実行で取り直す）
+resource "aws_lambda_function_event_invoke_config" "ingest" {
+  for_each                     = toset(["ingest-jma", "ingest-quake"])
+  function_name                = aws_lambda_function.fn[each.key].function_name
+  qualifier                    = aws_lambda_alias.live[each.key].name
+  maximum_retry_attempts       = 0
+  maximum_event_age_in_seconds = 60
 }
 
 # --- SQS からの起動（matcher・notifier） ---

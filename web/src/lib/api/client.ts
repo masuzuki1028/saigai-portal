@@ -23,11 +23,11 @@ export function apiBase(): string {
 export type Api = ReturnType<typeof createApi>;
 
 /** トークンを付けて API を呼ぶクライアント。401 が返ったら onUnauthorized を呼ぶ */
-export function createApi(getToken: () => string | null, onUnauthorized: () => void) {
+export function createApi(getToken: () => Promise<string | null>, onUnauthorized: () => void) {
   const client = createClient<paths>({ baseUrl: apiBase() });
   const auth: Middleware = {
-    onRequest({ request }) {
-      const token = getToken();
+    async onRequest({ request }) {
+      const token = await getToken();
       if (token) request.headers.set("Authorization", `Bearer ${token}`);
       return request;
     },

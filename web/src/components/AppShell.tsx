@@ -10,12 +10,15 @@ import { Disclaimer } from "./Disclaimer";
 
 /** ログインが必要な画面の枠。未ログインならログイン画面へ移る */
 export function AppShell({ title, back, children }: { title: string; back?: string; children: ReactNode }) {
-  const { token, userLabel, lastLogout, logout } = useAuth();
+  const { mode, token, userLabel, lastLogout, restoring, logout } = useAuth();
   const router = useRouter();
   useEffect(() => {
-    if (!token) router.replace(lastLogout === "deleted" ? "/?deleted=1" : "/login");
-  }, [token, lastLogout, router]);
-  if (!token) return null;
+    if (token || restoring) return;
+    // Cognito のときは、ログアウト・退会で Cognito のログアウト画面を経由してトップに戻る
+    if (mode === "cognito" && (lastLogout === "user" || lastLogout === "deleted")) return;
+    router.replace(lastLogout === "deleted" ? "/?deleted=1" : "/login");
+  }, [mode, token, lastLogout, restoring, router]);
+  if (!token) return restoring ? <p className="main">ログインしています…</p> : null;
   return (
     <>
       <header className="header">

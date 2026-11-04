@@ -24,6 +24,18 @@ variable "github_repository" {
   default     = "masuzuki1028/saigai-portal"
 }
 
+variable "github_owner_id" {
+  description = "GitHub のリポジトリの所有者の数値 ID（公開の値。https://api.github.com/repos/<owner>/<name> の owner.id）"
+  type        = string
+  default     = "37284283"
+}
+
+variable "github_repository_id" {
+  description = "GitHub のリポジトリの数値 ID（公開の値。同じ API の id）"
+  type        = string
+  default     = "1416713819"
+}
+
 variable "create_github_oidc_provider" {
   description = "GitHub Actions の OIDC プロバイダを作る。アカウントにすでにある（ほかのプロジェクトで作成済み）なら false にして、既存のものを参照する"
   type        = bool

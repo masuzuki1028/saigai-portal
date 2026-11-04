@@ -36,9 +36,18 @@ func (testVerifier) Verify(r *http.Request) (auth.Principal, error) {
 	return auth.Principal{Issuer: "test", Subject: sub}, nil
 }
 
-type noopSender struct{ sent int }
+// noopSender はテスト通知と、認証基盤のユーザーの削除を記録する。
+type noopSender struct {
+	sent    int
+	deleted []auth.Principal
+}
 
 func (n *noopSender) SendTest(context.Context, store.User) error { n.sent++; return nil }
+
+func (n *noopSender) DeleteUser(_ context.Context, p auth.Principal) error {
+	n.deleted = append(n.deleted, p)
+	return nil
+}
 
 func newServer(t *testing.T) (*httptest.Server, *noopSender) {
 	t.Helper()
@@ -46,7 +55,7 @@ func newServer(t *testing.T) (*httptest.Server, *noopSender) {
 	sender := &noopSender{}
 	s := &httpapi.Server{
 		Store: storetest.New(t), Resolver: area.StaticResolver{Points: area.DefaultStaticPoints},
-		Sealer: sealer, Notifier: sender, Log: slog.New(slog.NewTextHandler(io.Discard, nil)),
+		Sealer: sealer, Notifier: sender, Accounts: sender, Log: slog.New(slog.NewTextHandler(io.Discard, nil)),
 	}
 	h, err := s.Handler(testVerifier{})
 	if err != nil {
@@ -254,7 +263,7 @@ func allCases(locID string, upd any) []authzCase {
 }
 
 func TestDeleteAccount(t *testing.T) {
-	srv, _ := newServer(t)
+	srv, sender := newServer(t)
 	alice := createLocation(t, srv, "alice")
 	bob := createLocation(t, srv, "bob")
 	if code, _ := call(t, srv, http.MethodPost, "/api/me/delete", "alice", map[string]any{"confirm": "yes"}); code != http.StatusBadRequest {
@@ -262,6 +271,9 @@ func TestDeleteAccount(t *testing.T) {
 	}
 	if code, body := call(t, srv, http.MethodPost, "/api/me/delete", "alice", map[string]any{"confirm": "delete"}); code != http.StatusNoContent {
 		t.Fatalf("退会: %d %s", code, body)
+	}
+	if len(sender.deleted) != 1 || sender.deleted[0].Subject != "alice" {
+		t.Errorf("認証基盤のユーザーを削除していない: %v", sender.deleted)
 	}
 	// 同じ sub でログインし直すと、新しい利用者として扱われ、以前の地点は見えない
 	if _, body := call(t, srv, http.MethodGet, "/api/locations", "alice", nil); strings.Contains(string(body), alice.Id) {

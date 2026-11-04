@@ -94,7 +94,17 @@ Terraform は MFA のコードを入力できず、CLI が保存したセッシ�
 | --- | --- | --- |
 | Settings → Secrets and variables → Actions → **Secrets**（Repository secrets） | `PLAN_ROLE_ARN` | `AWS_PROFILE=saigai-readonly-tf terraform output -raw gha_plan_role_arn` |
 | 同上 | `TF_STATE_BUCKET` | `terraform output -raw state_bucket` |
+| 同上 | `TF_VARS_PROD` | `infra/envs/prod/terraform.tfvars` の中身をそのまま（アカウント ID・ドメイン・メールアドレスを含むため Secrets）。手元の tfvars を変えたら、こちらも同じ内容に更新する |
 | Settings → Environments → `prod` → **Environment secrets** | `DEPLOY_ROLE_ARN` | `terraform output -raw gha_deploy_role_arn` |
+
+Environments は2つ作る（`deploy-prod.yml` が使う。docs/06 5.2）。
+
+| Environment | 設定 |
+| --- | --- |
+| `prod-plan` | Deployment branches and tags → **Selected branches and tags** で、タグ `v*` だけを許す。承認は不要（plan は読み取り専用） |
+| `prod` | **Required reviewers** に自分を入れる。Deployment branches and tags はタグ `v*` だけ。「Prevent self-review」は外す（個人運用のため、自分で承認する） |
+
+リリースは `git tag v0.1.0 && git push origin v0.1.0` で始まる。タグを作れる人を絞るため、Settings → Rules → Rulesets でタグ `v*` の作成・削除を自分だけに制限する。
 
 ## 以後の変更
 

@@ -17,12 +17,12 @@ type Principal struct {
 var ErrUnauthenticated = errors.New("unauthenticated")
 
 // Verifier はリクエストから Principal を取り出す。
-// 本番では API Gateway の JWT オーソライザが検証したクレームを使う（AWS への構築時に実装する）。
+// 本番は API Gateway の JWT オーソライザが検証したクレームを使う ClaimsVerifier、ローカルは LocalVerifier。
 type Verifier interface {
 	Verify(r *http.Request) (Principal, error)
 }
 
-// Directory は通知先のメールアドレスを引く。メールアドレスは DynamoDB に保存せず、
+// Directory は通知先のメールアドレスを引く（本番は Cognito、ローカルは LocalDirectory）。メールアドレスは DynamoDB に保存せず、
 // 認証基盤（Cognito）にだけ置く（docs/04_data_model.md 8章）。
 type Directory interface {
 	Email(ctx context.Context, p Principal) (string, error)

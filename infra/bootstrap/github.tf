@@ -13,7 +13,11 @@ data "aws_iam_openid_connect_provider" "github" {
 }
 
 locals {
-  github_sub      = "repo:${var.github_repository}"
+  # 2026-07-15 以降に作ったリポジトリでは、OIDC のトークンの sub が「名前@数値 ID」の形式になる
+  # （例: repo:owner@123/name@456:pull_request）。名前を手放したあとに同じ名前を取った別のリポジトリと区別できる
+  github_owner    = split("/", var.github_repository)[0]
+  github_name     = split("/", var.github_repository)[1]
+  github_sub      = "repo:${local.github_owner}@${var.github_owner_id}/${local.github_name}@${var.github_repository_id}"
   github_oidc_arn = var.create_github_oidc_provider ? aws_iam_openid_connect_provider.github[0].arn : data.aws_iam_openid_connect_provider.github[0].arn
 }
 

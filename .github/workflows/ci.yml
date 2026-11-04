@@ -1,5 +1,4 @@
-# PR と main への push で、テスト・静的解析・脆弱性検査を行う（docs/06_deploy_flow.md 5.1、docs/08_test_strategy.md 7章）。
-# AWS に関わるジョブ（terraform plan など）は AWS の構築時に追加する。
+# PR と main への push で、テスト・静的解析・脆弱性検査と terraform plan を行う（docs/06_deploy_flow.md 5.1、docs/08_test_strategy.md 7章）。
 # 外部の Action はコミット SHA で固定する（docs/07_security.md 4.2）。
 name: ci
 
@@ -41,6 +40,8 @@ jobs:
             exit 1
           fi
       - run: go test -race -cover ./...
+      - name: Lambda のビルド（arm64）
+        run: GOOS=linux GOARCH=arm64 CGO_ENABLED=0 go build ./cmd/...
       - name: ファジング（seed のみ）
         run: go test ./internal/jma -run FuzzParse
       - run: go run golang.org/x/vuln/cmd/govulncheck@v1.1.4 ./...
@@ -113,6 +114,60 @@ jobs:
             web/playwright-report
             web/test-results
           retention-days: 7
+
+  infra:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - id: tfver
+        run: echo "version=$(cat infra/.terraform-version)" >> "$GITHUB_OUTPUT"
+      - uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4.0.1
+        with:
+          terraform_version: ${{ steps.tfver.outputs.version }}
+          terraform_wrapper: false
+      - run: terraform fmt -check -recursive infra
+      - name: terraform validate
+        run: |
+          for d in infra/bootstrap infra/envs/prod; do
+            terraform -chdir="$d" init -backend=false -input=false -no-color > /dev/null
+            terraform -chdir="$d" validate -no-color
+          done
+      # tflint・trivy はコンテナのイメージをダイジェストで固定して使う
+      - name: tflint
+        run: docker run --rm -v "$PWD/infra:/data" ghcr.io/terraform-linters/tflint@sha256:2c23953d05388157922a76be1a5a767ff719cba029e026914f92604e665b0d31 --recursive # v0.59.1
+      - name: trivy config
+        run: docker run --rm -v "$PWD/infra:/src:ro" aquasec/trivy@sha256:086971aaf400beebd94e8300fd8ea623774419597169156cec56eec5b00dfb1e config --severity HIGH,CRITICAL --exit-code 1 --quiet /src # v0.66.0
+
+  # 本番（prod）の plan。読み取り専用のロールで行い、件数だけをジョブの要約に出す（全文はログに出さない）。
+  # フォークと Dependabot の PR には Secrets が渡らないため実行しない
+  plan:
+    needs: infra
+    if: github.event_name == 'push' || (github.event.pull_request.head.repo.full_name == github.repository && github.actor != 'dependabot[bot]')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    concurrency:
+      group: tf-plan-prod
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
+        with:
+          role-to-assume: ${{ secrets.PLAN_ROLE_ARN }}
+          aws-region: ap-northeast-1
+          mask-aws-account-id: true
+      - id: tfver
+        run: echo "version=$(cat infra/.terraform-version)" >> "$GITHUB_OUTPUT"
+      - uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4.0.1
+        with:
+          terraform_version: ${{ steps.tfver.outputs.version }}
+          terraform_wrapper: false
+      - name: terraform plan（件数だけを要約に出す）
+        run: .github/scripts/tf-plan.sh infra/envs/prod -lock=false
+        env:
+          TF_STATE_BUCKET: ${{ secrets.TF_STATE_BUCKET }}
+          TF_VARS: ${{ secrets.TF_VARS_PROD }}
 
   secrets:
     runs-on: ubuntu-latest

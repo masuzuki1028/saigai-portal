@@ -8,7 +8,7 @@ import { useAuth } from "@/lib/auth/AuthProvider";
 
 /**
  * アカウント設定（docs/03 C-07）。いまは退会（全データの削除）だけ。
- * メールアドレスの変更・MFA・パスキー・ログイン履歴は Cognito の導入時に追加する。
+ * メールアドレスの変更・MFA・パスキー・ログイン履歴は、あとで追加する。退会すると Cognito のユーザーも削除する。
  */
 export function AccountScreen() {
   const { api, logout } = useAuth();
