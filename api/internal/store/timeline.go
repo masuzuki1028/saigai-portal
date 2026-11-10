@@ -21,6 +21,8 @@ const (
 	EventTTL    = 400 * 24 * time.Hour
 	TimelineTTL = 7 * 24 * time.Hour  // 無料プラン
 	StateTTL    = 30 * 24 * time.Hour // 発表中の状態。更新のたびに延長する
+	// SentTTL は送った通知の記録の保持期間。同じ通知の依頼のやり直し（SQS の再試行）はこの期間に収まる
+	SentTTL = 7 * 24 * time.Hour
 )
 
 // TimelineItem は地点ごとのタイムライン項目（docs/04 5.4）。
@@ -406,4 +408,27 @@ func (s *Store) GetQuakeKey(ctx context.Context, eventID string) (string, error)
 		return "", nil
 	}
 	return v.Value, nil
+}
+
+func sentSK(k string) string { return "SENT#" + k }
+
+// WasSent は、地点への通知 k を送ったことがあるか（同じ通知を二度送らないため。notifier）。
+func (s *Store) WasSent(ctx context.Context, locID, k string) (bool, error) {
+	out, err := s.DB.GetItem(ctx, &dynamodb.GetItemInput{
+		TableName: &s.Tables.Timeline, Key: key(timelinePK(locID), sentSK(k)),
+		ConsistentRead: aws.Bool(true), ProjectionExpression: aws.String("PK"),
+	})
+	if err != nil {
+		return false, err
+	}
+	return out.Item != nil, nil
+}
+
+// MarkSent は、地点への通知 k を送ったことを記録する。地点のタイムラインと一緒に削除される（DeleteTimeline）。
+func (s *Store) MarkSent(ctx context.Context, locID, k string) error {
+	item := key(timelinePK(locID), sentSK(k))
+	item["ttl"] = &types.AttributeValueMemberN{Value: strconv.FormatInt(ttlAfter(s.Now(), SentTTL), 10)}
+	item["writtenBy"] = &types.AttributeValueMemberS{Value: s.WrittenBy}
+	_, err := s.DB.PutItem(ctx, &dynamodb.PutItemInput{TableName: &s.Tables.Timeline, Item: item})
+	return err
 }

@@ -28,7 +28,8 @@ type Job struct {
 	Summary      string            `json:"summary"`
 	Status       domain.ItemStatus `json:"status"`
 	IssuedAt     time.Time         `json:"issuedAt"`
-	ItemID       string            `json:"itemId"`
+	// ItemID はタイムラインの項目の ID（取消の通知では、取り消した項目）。notifier が同じ通知を二度送らないために使う
+	ItemID string `json:"itemId"`
 }
 
 // Store は matcher が使う store の操作。
@@ -192,7 +193,7 @@ func (m *Matcher) cancel(ctx context.Context, ev *domain.Event, group string) (R
 		res.Jobs = append(res.Jobs, Job{
 			OwnerKey: a.OwnerKey, LocationID: a.LocationID, LocationName: a.LocationName, Hazard: hz,
 			Title: a.Title, Summary: "気象庁が「" + a.Title + "」の情報を取り消しました。" + ev.Headline,
-			Status: domain.StatusCancelled, IssuedAt: ev.IssuedAt,
+			Status: domain.StatusCancelled, IssuedAt: ev.IssuedAt, ItemID: a.ItemID,
 		})
 	}
 	m.Log.Info("cancelled", "eventId", ev.ID, "group", group, "items", len(affected), "notify", len(res.Jobs))

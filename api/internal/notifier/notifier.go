@@ -25,10 +25,18 @@ type Users interface {
 	GetUser(ctx context.Context, id string) (store.User, error)
 }
 
+// SentLog は送った通知の記録。matcher のやり直しや SQS の再試行で同じ通知の依頼が届いても、二度送らない。
+type SentLog interface {
+	WasSent(ctx context.Context, locID, key string) (bool, error)
+	MarkSent(ctx context.Context, locID, key string) error
+}
+
 type Notifier struct {
 	Users     Users
 	Directory auth.Directory
 	Mailer    Mailer
+	// Sent は送った通知の記録。nil なら記録せず、届いた依頼をすべて送る
+	Sent SentLog
 	// AppBaseURL は通知から開く画面の URL（例: http://localhost:3000）
 	AppBaseURL string
 	Log        *slog.Logger
@@ -36,8 +44,9 @@ type Notifier struct {
 
 // Handle は1つの地点への通知の依頼をまとめて1通のメールにする。メール通知をオフにしている利用者には送らない。
 func (n *Notifier) Handle(ctx context.Context, jobs []matcher.Job) error {
-	if len(jobs) == 0 {
-		return nil
+	jobs, err := n.unsent(ctx, jobs)
+	if err != nil || len(jobs) == 0 {
+		return err
 	}
 	j := jobs[0]
 	userID := store.UserIDFromOwnerKey(j.OwnerKey)
@@ -81,6 +90,7 @@ func (n *Notifier) Handle(ctx context.Context, jobs []matcher.Job) error {
 	if err := n.Mailer.Send(ctx, to, subject, body); err != nil {
 		return err
 	}
+	n.markSent(ctx, jobs)
 	n.Log.Info("notified", "locationId", j.LocationID, "jobs", len(jobs), "to", logx.MaskEmail(to))
 	return nil
 }
@@ -113,4 +123,50 @@ func statusLabel(s domain.ItemStatus, title string) string {
 // oneLine は件名に改行が入らないようにする（メールヘッダーインジェクション対策）。
 func oneLine(s string) string {
 	return strings.NewReplacer("\r", " ", "\n", " ").Replace(s)
+}
+
+// sentKey は通知を見分けるキー。同じ項目でも、取消・訂正などの通知は別の通知として扱う。
+// 項目の ID のない依頼（古い版の matcher が送ったもの）は記録しない
+func sentKey(j matcher.Job) string {
+	if j.ItemID == "" {
+		return ""
+	}
+	return string(j.Status) + ":" + j.ItemID
+}
+
+// unsent は、まだ送っていない依頼だけを返す。
+func (n *Notifier) unsent(ctx context.Context, jobs []matcher.Job) ([]matcher.Job, error) {
+	if n.Sent == nil {
+		return jobs, nil
+	}
+	out := jobs[:0:0]
+	for _, j := range jobs {
+		if k := sentKey(j); k != "" {
+			sent, err := n.Sent.WasSent(ctx, j.LocationID, k)
+			if err != nil {
+				return nil, fmt.Errorf("sent log: %w", err)
+			}
+			if sent {
+				n.Log.Info("送信済みの通知のため送りません", "locationId", j.LocationID, "itemId", j.ItemID, "status", j.Status)
+				continue
+			}
+		}
+		out = append(out, j)
+	}
+	return out, nil
+}
+
+// markSent は送った通知を記録する。記録に失敗しても、メールは送れているため再試行しない
+// （再試行すると同じメールをもう一度送ってしまう）。
+func (n *Notifier) markSent(ctx context.Context, jobs []matcher.Job) {
+	if n.Sent == nil {
+		return
+	}
+	for _, j := range jobs {
+		if k := sentKey(j); k != "" {
+			if err := n.Sent.MarkSent(ctx, j.LocationID, k); err != nil {
+				n.Log.Warn("送った通知を記録できませんでした", "locationId", j.LocationID, "itemId", j.ItemID, "err", err)
+			}
+		}
+	}
 }
