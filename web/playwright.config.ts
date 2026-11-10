@@ -13,9 +13,10 @@ export default defineConfig({
   reporter: process.env.CI ? [["list"], ["html", { open: "never" }]] : "list",
   use: {
     baseURL: `http://127.0.0.1:${PORT}`,
-    trace: "retain-on-failure",
+    // CI では失敗した1回目は記録せず、リトライのときだけトレース・動画を撮る（毎回の録画の負荷を省く）
+    trace: process.env.CI ? "on-first-retry" : "retain-on-failure",
     screenshot: "only-on-failure",
-    video: "retain-on-failure",
+    video: process.env.CI ? "on-first-retry" : "retain-on-failure",
     locale: "ja-JP",
     timezoneId: "Asia/Tokyo",
   },
