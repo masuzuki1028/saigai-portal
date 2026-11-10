@@ -82,3 +82,64 @@ func TestHandle(t *testing.T) {
 		}
 	}
 }
+
+type fakeSent map[string]bool
+
+func (f fakeSent) WasSent(_ context.Context, locID, k string) (bool, error) {
+	return f[locID+"/"+k], nil
+}
+func (f fakeSent) MarkSent(_ context.Context, locID, k string) error {
+	f[locID+"/"+k] = true
+	return nil
+}
+
+// matcher のやり直しや SQS の再試行で同じ依頼が届いても、送った通知はもう一度送らない。
+// 取消は、同じ項目でも別の通知として送る。
+func TestHandleSkipsSentJobs(t *testing.T) {
+	users := fakeUsers{"U1": {ID: "U1", Issuer: "iss", Subject: "s1", EmailEnabled: true}}
+	m := &fakeMailer{}
+	sentLog := fakeSent{}
+	n := &Notifier{Users: users, Directory: fakeDir{}, Mailer: m, Sent: sentLog, AppBaseURL: "https://example.com", Log: slog.New(slog.NewTextHandler(io.Discard, nil))}
+	at := time.Date(2026, 11, 10, 12, 0, 0, 0, time.UTC)
+	rain := matcher.Job{OwnerKey: "OWNER#U#U1", LocationID: "L1", LocationName: "自宅", Hazard: domain.Rain, Severity: 3, Title: "大雨警報", Status: domain.StatusIssued, IssuedAt: at, ItemID: "I1"}
+	flood := matcher.Job{OwnerKey: "OWNER#U#U1", LocationID: "L1", LocationName: "自宅", Hazard: domain.Flood, Severity: 3, Title: "洪水警報", Status: domain.StatusIssued, IssuedAt: at, ItemID: "I2"}
+	ctx := context.Background()
+
+	if err := n.Handle(ctx, []matcher.Job{rain}); err != nil {
+		t.Fatal(err)
+	}
+	// 同じ依頼のやり直し: 送らない
+	if err := n.Handle(ctx, []matcher.Job{rain}); err != nil {
+		t.Fatal(err)
+	}
+	if len(m.sent) != 1 {
+		t.Fatalf("送った回数 = %d, want 1", len(m.sent))
+	}
+	// やり直しで組み合わせが変わった: まだ送っていない洪水警報だけを送る
+	if err := n.Handle(ctx, []matcher.Job{rain, flood}); err != nil {
+		t.Fatal(err)
+	}
+	if len(m.sent) != 2 || strings.Contains(m.sent[1].subject, "大雨警報") || !strings.Contains(m.sent[1].subject, "洪水警報") {
+		t.Fatalf("2通目 = %+v", m.sent)
+	}
+	// 同じ項目の取消は別の通知
+	cancel := rain
+	cancel.Status = domain.StatusCancelled
+	if err := n.Handle(ctx, []matcher.Job{cancel}); err != nil {
+		t.Fatal(err)
+	}
+	if len(m.sent) != 3 {
+		t.Errorf("取消を送っていない: %d", len(m.sent))
+	}
+	// 項目の ID のない依頼（古い版の matcher）は、記録せずに送る
+	old := rain
+	old.ItemID = ""
+	for range 2 {
+		if err := n.Handle(ctx, []matcher.Job{old}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if len(m.sent) != 5 {
+		t.Errorf("項目の ID のない依頼の送信回数 = %d, want 5", len(m.sent))
+	}
+}

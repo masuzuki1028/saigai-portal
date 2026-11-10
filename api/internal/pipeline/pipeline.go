@@ -26,7 +26,7 @@ type Pipeline struct {
 
 func New(st *store.Store, dir auth.Directory, mailer notifier.Mailer, appBaseURL string, log *slog.Logger) *Pipeline {
 	p := &Pipeline{}
-	p.Notifier = &notifier.Notifier{Users: st, Directory: dir, Mailer: mailer, AppBaseURL: appBaseURL, Log: log}
+	p.Notifier = &notifier.Notifier{Users: st, Directory: dir, Mailer: mailer, Sent: st, AppBaseURL: appBaseURL, Log: log}
 	p.Matcher = &matcher.Matcher{Store: st, Notify: p.Notifier.Handle, Log: log}
 	onEvent := func(ctx context.Context, ev *domain.Event) error {
 		r, err := p.Matcher.Match(ctx, ev)

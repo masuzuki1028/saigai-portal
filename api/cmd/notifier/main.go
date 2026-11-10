@@ -44,7 +44,7 @@ func run(ctx context.Context, log *slog.Logger) error {
 	if err != nil {
 		return err
 	}
-	n := &notifier.Notifier{Users: st, Directory: cognito, Mailer: mailer, AppBaseURL: v["APP_BASE_URL"], Log: log}
+	n := &notifier.Notifier{Users: st, Directory: cognito, Mailer: mailer, Sent: st, AppBaseURL: v["APP_BASE_URL"], Log: log}
 	lambda.Start(func(ctx context.Context, ev events.SQSEvent) (events.SQSEventResponse, error) {
 		return queue.HandleBatch(ctx, ev, log, n.Handle), nil
 	})

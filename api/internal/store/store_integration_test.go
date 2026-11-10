@@ -177,3 +177,34 @@ func TestDeleteUserData(t *testing.T) {
 		t.Error("退会前と同じ userId が使われた")
 	}
 }
+
+// 送った通知の記録は、地点のタイムラインに混ざらず、地点のタイムラインと一緒に削除される。
+func TestSentLog(t *testing.T) {
+	s := storetest.New(t)
+	ctx := context.Background()
+	if sent, err := s.WasSent(ctx, "L1", "issued:I1"); err != nil || sent {
+		t.Fatalf("記録の前: sent=%v err=%v", sent, err)
+	}
+	if err := s.MarkSent(ctx, "L1", "issued:I1"); err != nil {
+		t.Fatal(err)
+	}
+	if sent, err := s.WasSent(ctx, "L1", "issued:I1"); err != nil || !sent {
+		t.Fatalf("記録のあと: sent=%v err=%v", sent, err)
+	}
+	if sent, _ := s.WasSent(ctx, "L2", "issued:I1"); sent {
+		t.Error("別の地点の記録が見える")
+	}
+	items, _, err := s.QueryTimeline(ctx, "L1", 10, "")
+	if err != nil || len(items) != 0 {
+		t.Fatalf("タイムラインに記録が混ざった: %v %v", items, err)
+	}
+	if states, err := s.ListStates(ctx, "L1"); err != nil || len(states) != 0 {
+		t.Fatalf("状態に記録が混ざった: %v %v", states, err)
+	}
+	if err := s.DeleteTimeline(ctx, "L1"); err != nil {
+		t.Fatal(err)
+	}
+	if sent, _ := s.WasSent(ctx, "L1", "issued:I1"); sent {
+		t.Error("地点のタイムラインを削除しても記録が残っている")
+	}
+}

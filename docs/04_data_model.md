@@ -197,6 +197,7 @@ erDiagram
 | --- | --- | --- | --- |
 | TimelineItem | `LOC#<locId>` | `T#<issuedAt>#<itemId>` | kind(official/sns), eventRef, hazard, severity, reliability, summary, sourceUrl, notified, ackStatus(法人), ackBy, ttl |
 | NotificationLog | `LOC#<locId>` | `N#<sentAt>#<id>` | channelId, result, errorCode, ttl |
+| SentMark | `LOC#<locId>` | `SENT#<status>:<itemId>` | ttl（7日）, writtenBy。送った通知の記録。同じ通知の依頼が再び届いても二度送らない（`notifier`）。取消・訂正は同じ項目でも別の通知として扱う |
 | TimelineItem（報告） | `LOC#<locId>` | `T#<reportedAt>#<itemId>` | kind=report, reporterUserId, status, comment（140字まで）, ttl |
 | CheckSet | `ORG#<orgId>` | `CHKSET#<createdAt>#<checkSetId>` | eventRef, hazard, severity, total, answered, damaged, ttl |
 | CheckRequest | `CHKSET#<checkSetId>` | `LOC#<locId>` | locName, category, answer, damage[], comment（140字まで）, sentAt, answeredAt, reminderCount, ttl |

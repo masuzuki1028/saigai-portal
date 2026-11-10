@@ -242,6 +242,17 @@ data "aws_iam_policy_document" "notifier" {
       values   = ["USER#*"]
     }
   }
+  # 送った通知の記録（同じ通知を二度送らない）。地点のタイムラインのパーティションだけ
+  statement {
+    sid       = "SentLog"
+    actions   = ["dynamodb:GetItem", "dynamodb:PutItem"]
+    resources = [local.table_arns["timeline"]]
+    condition {
+      test     = "ForAllValues:StringLike"
+      variable = "dynamodb:LeadingKeys"
+      values   = ["LOC#*"]
+    }
+  }
   statement {
     sid       = "LookupEmail"
     actions   = ["cognito-idp:AdminGetUser"]
