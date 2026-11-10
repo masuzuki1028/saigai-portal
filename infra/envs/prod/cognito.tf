@@ -26,6 +26,20 @@ resource "aws_cognito_user_pool" "this" {
     }
   }
 
+  # 新規登録の確認とパスワードの再設定は、同じ文面で確認コードを送る（Cognito の標準は英語）
+  verification_message_template {
+    default_email_option = "CONFIRM_WITH_CODE"
+    email_subject        = "【saigai-timeline】確認コード"
+    email_message        = <<-EOT
+      saigai-timeline の確認コードです。
+
+      確認コード: {####}
+
+      画面に戻って、このコードを入力してください。
+      心当たりがない場合は、このメールを無視してください。
+    EOT
+  }
+
   # SES の本番利用が承認されるまでは Cognito の標準の送信（1日 50 通まで）を使う（ses.tf）
   email_configuration {
     email_sending_account = local.ses_sending ? "DEVELOPER" : "COGNITO_DEFAULT"

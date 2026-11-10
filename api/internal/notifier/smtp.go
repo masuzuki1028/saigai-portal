@@ -12,12 +12,12 @@ import (
 // SMTPMailer は SMTP でメールを送る。ローカルでは Mailpit（127.0.0.1:1025）に送る。認証は行わない。
 type SMTPMailer struct {
 	Addr string
-	From string
+	From string // 差出人のアドレス（名前は付けない）
 }
 
 func (m SMTPMailer) Send(_ context.Context, to, subject, body string) error {
 	var b bytes.Buffer
-	fmt.Fprintf(&b, "From: %s\r\n", m.From)
+	fmt.Fprintf(&b, "From: %s\r\n", fromHeader(m.From))
 	fmt.Fprintf(&b, "To: %s\r\n", oneLine(to))
 	fmt.Fprintf(&b, "Subject: %s\r\n", mime.BEncoding.Encode("UTF-8", oneLine(subject)))
 	fmt.Fprintf(&b, "Date: %s\r\n", time.Now().Format(time.RFC1123Z))

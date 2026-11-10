@@ -16,6 +16,7 @@ describe("cognito", () => {
     expect(q.get("client_id")).toBe("client1");
     expect(q.get("redirect_uri")).toBe(`${window.location.origin}/auth/callback`);
     expect(q.get("code_challenge_method")).toBe("S256");
+    expect(q.get("lang")).toBe("ja");
 
     let tokenBody: URLSearchParams | undefined;
     server.use(
