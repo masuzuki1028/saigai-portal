@@ -145,4 +145,5 @@ terraform fmt -check -recursive infra && tflint --recursive --chdir=infra
 - リリース方式（ブルーグリーン・ダークリリース・カナリア・シャドー・ロールバック）: docs/09_release_strategy.md（デプロイ・リリース操作を変更するときに参照）
 - DR（大阪リージョンへの切り替え・バックアップ）: docs/10_disaster_recovery.md（インフラ・データ・認証を変更するときに参照）
 - Phase 2 の計画（範囲・順番・決定事項）: docs/11_phase2_plan.md（Phase 2 の機能を作るときに参照）
+- 家族共有の設計（データ・認可・API・通知）: docs/12_family_sharing.md（家族共有・現地からの報告を作るときに参照）
 - ユースケース: docs/02_use_case_scenarios.md、画面: docs/03_screens.md（必要なときに参照）
