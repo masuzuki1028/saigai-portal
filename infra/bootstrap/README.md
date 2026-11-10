@@ -17,6 +17,10 @@
 - AWS CLI 2.3x 以上（`aws login` が使えること）
 - Terraform 1.16.5（`infra/.terraform-version`。tfenv なら自動で使われる）
 - 運営者用の IAM ユーザーをコンソールで作成済み（パスワード＋MFA。**アクセスキーは作らない**）。名前は本名と結び付かないもの（例: `saigai-operator`）にする（ARN やログに出るため）
+- ルートユーザー（アカウントを作ったメールアドレス）で、次を済ませておく。ルートユーザーは、これ以後は使わない
+  - MFA（パスキーか認証アプリ）を登録する: 右上のアカウント名 →「セキュリティ認証情報」→「多要素認証（MFA）」
+  - IAM ユーザーに請求情報の閲覧を許可する（手順 7 の予算アラームに必要）: 右上のアカウント名 →「アカウント」→「IAM ユーザーおよびロールによる請求情報へのアクセス」→「IAM アクセスをアクティブ化」。ルートユーザーにしかできず、これがないと管理者権限があっても予算を作れない
+  - （任意）アカウントのエイリアスを、本名と結び付かない名前で作る（サインインの URL に出るため）
 
 ## 手順
 
@@ -106,6 +110,28 @@ Environments は2つ作る（`deploy-prod.yml` が使う。docs/06 5.2）。
 
 リリースは `git tag v0.1.0 && git push origin v0.1.0` で始まる。タグを作れる人を絞るため、Settings → Rules → Rulesets でタグ `v*` の作成・削除を自分だけに制限する。
 
+### 7. 予算アラームを作る
+
+月 $50 の予算に、実績 $20（40%）・実績 $50（100%）・予測 $50 超えの3つの通知を付ける（docs/05 4章）。
+通知先のメールアドレスを公開リポジトリに載せないため、Terraform では管理せず、CLI で1回だけ作る（名前は `saigai-monthly`）。
+`saigai-admin` のロールで実行する。
+
+```sh
+export AWS_PROFILE=saigai-admin
+ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+printf '通知を受け取るメールアドレス: '; read -r EMAIL   # bash・zsh のどちらでも動く書き方
+sub='[{"SubscriptionType":"EMAIL","Address":"'"$EMAIL"'"}]'
+aws budgets create-budget --account-id "$ACCOUNT_ID" \
+  --budget '{"BudgetName":"saigai-monthly","BudgetLimit":{"Amount":"50","Unit":"USD"},"TimeUnit":"MONTHLY","BudgetType":"COST"}' \
+  --notifications-with-subscribers '[
+    {"Notification":{"NotificationType":"ACTUAL","ComparisonOperator":"GREATER_THAN","Threshold":40,"ThresholdType":"PERCENTAGE"},"Subscribers":'"$sub"'},
+    {"Notification":{"NotificationType":"ACTUAL","ComparisonOperator":"GREATER_THAN","Threshold":100,"ThresholdType":"PERCENTAGE"},"Subscribers":'"$sub"'},
+    {"Notification":{"NotificationType":"FORECASTED","ComparisonOperator":"GREATER_THAN","Threshold":100,"ThresholdType":"PERCENTAGE"},"Subscribers":'"$sub"'}
+  ]'
+aws budgets describe-budget --account-id "$ACCOUNT_ID" --budget-name saigai-monthly --query 'Budget.BudgetLimit'
+unset EMAIL sub
+```
+
 ## 以後の変更
 
 bootstrap 自体を変えるときは、`saigai-admin` で plan・apply する（CI のデプロイ用ロールは bootstrap のリソースを変えられない）。
@@ -114,3 +140,17 @@ bootstrap 自体を変えるときは、`saigai-admin` で plan・apply する�
 AWS_PROFILE=saigai-readonly-tf terraform plan -out=tfplan   # Claude Code はここまで
 AWS_PROFILE=saigai-admin-tf terraform apply tfplan           # 運営者が内容を確認して実行する（先に CLI で saigai-admin のコードを入力）
 ```
+
+## うまくいかないとき
+
+| 症状 | 確認すること |
+| --- | --- |
+| `aws login` がない（`Invalid choice`） | AWS CLI を更新する（`aws --version` が 2.3x 以上か） |
+| `aws sts get-caller-identity` が `root` になる | ブラウザでルートユーザーのままサインインしていないか。サインアウトして IAM ユーザーでログインし直す |
+| `Your session has expired. Please reauthenticate using 'aws login'` | IAM ユーザーのログインが切れている。`aws login --profile saigai` のあとで、ロールのプロファイルで MFA のコードを入力し直す |
+| Terraform が `Token has expired` などで止まる | ロールのセッション（最長 1 時間）が切れている。`aws sts get-caller-identity --profile saigai-readonly`（または `saigai-admin`）で MFA のコードを入力し直す |
+| `terraform validate` で、既存の `error_message` が「英語の文」でないと言われる | 古い Terraform（1.0 系など）で動いている。tfenv は実行したディレクトリから上にたどって `.terraform-version` を探すため、リポジトリのルートから `-chdir` で実行すると見つからない。`infra/` の中で実行する |
+| 予算の作成で `AccessDeniedException` | 前提の「請求情報の閲覧の許可」が済んでいるか |
+| `terraform plan` で `allowed_account_ids` のエラー | `terraform.tfvars` の `account_id` と、ログインしているアカウントが一致しているか |
+| GitHub Actions で `Not authorized to perform sts:AssumeRoleWithWebIdentity` | トークンの `sub` が信頼条件と一致しているか。CloudTrail の `AssumeRoleWithWebIdentity` の拒否の記録で、届いた `sub` を確認できる（このリポジトリは `repo:<owner>@<id>/<name>@<id>:...` の形式。docs/06 4.1） |
+| デプロイが `not authorized to perform: <操作>` で失敗する | デプロイ用ロールに許可するサービスが足りない。`policies.tf` の `deploy_services` に足して、この bootstrap を apply する |
