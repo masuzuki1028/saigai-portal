@@ -28,7 +28,7 @@ func TestSESMailer(t *testing.T) {
 		t.Fatal(err)
 	}
 	in := f.in[0]
-	if *in.FromEmailAddress != "notify@example.com" || in.Destination.ToAddresses[0] != "a@example.com" {
+	if *in.FromEmailAddress != `"saigai-timeline" <notify@example.com>` || in.Destination.ToAddresses[0] != "a@example.com" {
 		t.Errorf("from/to = %s %v", *in.FromEmailAddress, in.Destination.ToAddresses)
 	}
 	if got := *in.Content.Simple.Subject.Data; got != "件名  Bcc: evil@example.com" {

@@ -71,6 +71,7 @@ export async function authorizeUrl(cfg: CognitoConfig, returnTo: string): Promis
     state,
     code_challenge: await codeChallenge(verifier),
     code_challenge_method: "S256",
+    lang: "ja", // マネージドログインの画面を日本語にする
   });
   return `${cfg.domain}/oauth2/authorize?${q}`;
 }
