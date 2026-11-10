@@ -236,7 +236,7 @@ Lambda (Go) 収集ワーカー
 | --- | --- |
 | Phase 0 | コンセプト・シナリオ整理（本ドキュメント） |
 | Phase 1（MVP） | 公式情報のみで地点別タイムライン + 地図、toC 無料版、メール通知 |
-| Phase 2 | SNS（Threads / Bluesky）取り込み、信頼度ラベル、Web Push、家族共有、現地からの報告 |
+| Phase 2 | SNS（Threads / Bluesky）取り込み、信頼度ラベル、Web Push、家族共有、現地からの報告（計画: [11](./11_phase2_plan.md)） |
 | Phase 3 | toB 版（組織管理・複数拠点ダッシュボード・取引先タグ・音声読み上げ・Slack/Teams 通知・状況確認の依頼・CSV） |
 | Phase 4 | 課金、X API 連携検討、安否確認、外部API提供 |
 
