@@ -90,8 +90,33 @@ jobs:
       - run: npm audit --omit=dev --audit-level=high
       - run: npm run build
 
-  web-e2e:
+  # E2E が必要な変更か（画面・API 仕様・このワークフロー）。PR 以外（main への push）は常に実行する
+  changes:
     runs-on: ubuntu-latest
+    outputs:
+      web: ${{ steps.diff.outputs.web }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - id: diff
+        env:
+          EVENT: ${{ github.event_name }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          web=true
+          if [ "$EVENT" = pull_request ]; then
+            git fetch --depth=1 origin "$BASE_SHA"
+            git diff --name-only "$BASE_SHA" HEAD | grep -qE '^(web/|api/openapi\.yaml$|\.github/workflows/ci\.yml$)' || web=false
+          fi
+          echo "web=$web" >> "$GITHUB_OUTPUT"
+
+  # ブラウザと OS の依存が入った Playwright の公式イメージで動かし、毎回のインストール（apt + ブラウザのダウンロード）を省く。
+  # イメージのバージョンは package.json の @playwright/test と合わせる
+  web-e2e:
+    needs: changes
+    if: needs.changes.outputs.web == 'true'
+    runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/playwright@sha256:2f05f8a734509a7b3f26a912639488ee08f58a7b292d14d62271bcff9038768f # v1.64.1-noble
     defaults:
       run:
         working-directory: web
@@ -103,7 +128,6 @@ jobs:
           cache: npm
           cache-dependency-path: web/package-lock.json
       - run: npm ci --ignore-scripts
-      - run: npx playwright install --with-deps chromium webkit
       - name: E2E（モック API）
         run: npx playwright test
       - if: failure()
