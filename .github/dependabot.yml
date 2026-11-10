@@ -34,6 +34,9 @@ updates:
     directory: /
     schedule: { interval: weekly, day: monday, timezone: Asia/Tokyo }
     cooldown: { default-days: 14 }
+    groups:
+      # CodeQL の init と analyze は同じ版で動かす（別々の PR だと、それぞれの PR で版が食い違う）
+      codeql: { patterns: ["github/codeql-action", "github/codeql-action/*"] }
   - package-ecosystem: docker-compose
     directory: /
     schedule: { interval: weekly, day: monday, timezone: Asia/Tokyo }
