@@ -61,26 +61,37 @@ type Result struct {
 	Jobs  []Job
 }
 
-// Match は Event を処理する。同じ Event を2回処理しても、タイムラインと通知は重複しない。
+// Match は Event を処理する。同じ Event を2回処理しても、タイムラインは重複しない。
+//
+// 通知を落とさないよう、判定のあいだの書き込み（状態・タイムライン・取消の記録）は貯めておき、
+// 通知の依頼を送ってから書き込む。先に状態を書くと、通知の依頼の送信や途中の書き込みに失敗して
+// 同じ電文をやり直したとき、「変化なし」と判定されて通知が二度と送られない。
+// この順にすると、やり直したときはまだ書いていない地点を判定し直して通知を送り直すため、
+// まれに同じ通知が2回届く（通知が落ちるよりよい）。
 func (m *Matcher) Match(ctx context.Context, ev *domain.Event) (Result, error) {
-	res, err := m.match(ctx, ev)
-	if err != nil || m.Notify == nil {
+	p := newPending(m.Store)
+	w := *m
+	w.Store = p
+	res, err := w.match(ctx, ev)
+	if err != nil {
 		return res, err
 	}
-	byLoc := map[string][]Job{}
-	var order []string
-	for _, j := range res.Jobs {
-		if _, ok := byLoc[j.LocationID]; !ok {
-			order = append(order, j.LocationID)
+	if m.Notify != nil {
+		byLoc := map[string][]Job{}
+		var order []string
+		for _, j := range res.Jobs {
+			if _, ok := byLoc[j.LocationID]; !ok {
+				order = append(order, j.LocationID)
+			}
+			byLoc[j.LocationID] = append(byLoc[j.LocationID], j)
 		}
-		byLoc[j.LocationID] = append(byLoc[j.LocationID], j)
-	}
-	for _, id := range order {
-		if err := m.Notify(ctx, byLoc[id]); err != nil {
-			return res, err
+		for _, id := range order {
+			if err := m.Notify(ctx, byLoc[id]); err != nil {
+				return res, err
+			}
 		}
 	}
-	return res, nil
+	return res, p.flush(ctx)
 }
 
 func (m *Matcher) match(ctx context.Context, ev *domain.Event) (Result, error) {
