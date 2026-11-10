@@ -90,10 +90,11 @@ resource "aws_iam_role" "gha_deploy" {
   max_session_duration = 3600
 }
 
-# IAM 以外の操作（Lambda・DynamoDB・S3・CloudFront など）
-resource "aws_iam_role_policy_attachment" "gha_deploy_poweruser" {
-  role       = aws_iam_role.gha_deploy.name
-  policy_arn = "arn:aws:iam::aws:policy/PowerUserAccess"
+# IAM 以外の操作（Lambda・DynamoDB・S3・CloudFront など）。使うサービスだけを許可する（policies.tf）
+resource "aws_iam_role_policy" "gha_deploy_services" {
+  name   = "services"
+  role   = aws_iam_role.gha_deploy.id
+  policy = data.aws_iam_policy_document.gha_deploy_services.json
 }
 
 resource "aws_iam_role_policy" "gha_deploy_iam" {
