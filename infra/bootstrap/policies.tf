@@ -108,6 +108,75 @@ data "aws_iam_policy_document" "gha_deploy_iam" {
   }
 }
 
+# CI のデプロイ用ロールの IAM 以外の操作。infra/envs/prod が使うサービスだけを、東京と us-east-1
+# （CloudFront・ACM・Route 53 などのグローバルなサービス）で許可する（以前は PowerUserAccess）。
+# 新しいサービスを使うときは、ここに足してから bootstrap を apply する（大阪の DR を作るときは ap-northeast-3 も）
+locals {
+  deploy_services = [
+    "acm", "apigateway", "cloudfront", "cloudwatch", "cognito-idp", "dynamodb", "kms", "lambda",
+    "logs", "route53", "s3", "scheduler", "ses", "sns", "sqs",
+  ]
+}
+
+data "aws_iam_policy_document" "gha_deploy_services" {
+  statement {
+    sid       = "UsedServices"
+    actions   = [for s in local.deploy_services : "${s}:*"]
+    resources = ["*"]
+    condition {
+      test     = "StringEquals"
+      variable = "aws:RequestedRegion"
+      values   = ["ap-northeast-1", "us-east-1"]
+    }
+  }
+  # デプロイに使わない、利用者のデータを読み書きする操作（docs/07 3.4「本番データの閲覧は原則禁止」）
+  statement {
+    sid    = "DenyDataPlane"
+    effect = "Deny"
+    actions = [
+      "dynamodb:GetItem", "dynamodb:BatchGetItem", "dynamodb:Query", "dynamodb:Scan",
+      "dynamodb:PutItem", "dynamodb:UpdateItem", "dynamodb:DeleteItem", "dynamodb:BatchWriteItem",
+      "dynamodb:PartiQL*", "dynamodb:GetRecords", "dynamodb:ExportTableToPointInTime", "dynamodb:RestoreTable*",
+      "cognito-idp:Admin*", "cognito-idp:ListUsers", "cognito-idp:ListUsersInGroup",
+      "sqs:SendMessage", "sqs:ReceiveMessage", "sqs:DeleteMessage", "sqs:PurgeQueue", "sqs:StartMessageMoveTask",
+      "logs:GetLogEvents", "logs:FilterLogEvents", "logs:StartQuery", "logs:StartLiveTail",
+      "ses:SendEmail", "ses:SendRawEmail", "ses:SendBulkEmail",
+      "lambda:InvokeFunction", "lambda:InvokeFunctionUrl", "lambda:InvokeAsync",
+    ]
+    resources = ["*"]
+  }
+  # 画面のファイルは書くだけ（aws s3 sync）。state のバケットは scoped-iam の StateBucket で読み書きする
+  statement {
+    sid           = "DenyObjectReadExceptState"
+    effect        = "Deny"
+    actions       = ["s3:GetObject", "s3:GetObjectVersion"]
+    not_resources = ["${aws_s3_bucket.tfstate.arn}/*"]
+  }
+  # 暗号化したデータの復号は、Lambda を通したもの（関数の環境変数）だけにする
+  statement {
+    sid       = "DenyDecryptExceptLambdaConfig"
+    effect    = "Deny"
+    actions   = ["kms:Decrypt"]
+    resources = ["*"]
+    condition {
+      test     = "StringNotLike"
+      variable = "kms:ViaService"
+      values   = ["lambda.*.amazonaws.com"]
+    }
+  }
+  # 取り返しのつかない操作は、CI からはさせない（必要なら運営者が admin のロールで行う）
+  statement {
+    sid    = "DenyIrreversible"
+    effect = "Deny"
+    actions = [
+      "kms:ScheduleKeyDeletion", "kms:DisableKey", "kms:PutKeyPolicy",
+      "dynamodb:DeleteTable", "dynamodb:DeleteBackup", "dynamodb:UpdateContinuousBackups",
+      "cognito-idp:DeleteUserPool",
+    ]
+    resources = ["*"]
+  }
+}
+
 # デプロイ用ロールが、自分自身や bootstrap のリソースを変えられないようにする
 data "aws_iam_policy_document" "deploy_guard" {
   statement {
